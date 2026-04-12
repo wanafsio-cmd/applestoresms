@@ -26,7 +26,7 @@ export function POSHeader({
   const { settings, logoSrc } = useShopSettings();
 
   return (
-    <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-border p-4 lg:pb-4 space-y-3 lg:space-y-4">
+    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 p-4 lg:pb-4 space-y-3 lg:space-y-4">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">পয়েন্ট অব সেল</h1>

@@ -139,8 +139,8 @@ export function BrandingSettings() {
   };
 
   return (
-    <Card className="p-6 border-2 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10">
-      <h2 className="text-xl font-semibold mb-4 text-foreground">🔐 ব্র্যান্ডিং সেটিংস</h2>
+    <Card className="p-6 border border-accent/30 bg-accent/5">
+      <h2 className="text-xl font-bold mb-4 text-foreground tracking-tight">🔐 ব্র্যান্ডিং সেটিংস</h2>
       <p className="text-sm text-muted-foreground mb-6">
         দোকানের নাম, লোগো, ফেভিকন এবং ঠিকানা পরিবর্তন করুন। পরিবর্তনগুলো সব পেজে প্রতিফলিত হবে।
       </p>
