@@ -34,31 +34,7 @@ export function Settings() {
   const navigate = useNavigate();
   const { settings, logoSrc } = useShopSettings();
   const { isAdmin } = useUserRole();
-  const [showBranding, setShowBranding] = useState(false);
-  const [secretBuffer, setSecretBuffer] = useState("");
-
-  // Secret code listener to unlock branding settings
-  useEffect(() => {
-    const SECRET_CODE = "331548";
-    let buffer = "";
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input/textarea
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      
-      buffer += e.key;
-      if (buffer.length > SECRET_CODE.length) {
-        buffer = buffer.slice(-SECRET_CODE.length);
-      }
-      if (buffer === SECRET_CODE) {
-        setShowBranding(true);
-        toast.success("🔐 ব্র্যান্ডিং সেটিংস আনলক হয়েছে!");
-        buffer = "";
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Branding settings now directly visible for admin users
 
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -500,13 +476,15 @@ export function Settings() {
   return (
     <div className="flex flex-col h-screen animate-fade-in">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-border pb-4">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 pb-4">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-            <p className="text-muted-foreground mt-1">Manage your account and system data</p>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">সেটিংস</h1>
+            <p className="text-muted-foreground mt-1">অ্যাকাউন্ট ও সিস্টেম ডেটা ব্যবস্থাপনা</p>
           </div>
-          <img src={logoSrc} alt={settings.shop_name} className="w-20 h-20" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex items-center justify-center shadow-lg">
+            <img src={logoSrc} alt={settings.shop_name} className="w-14 h-14 object-contain" />
+          </div>
         </div>
       </div>
 
@@ -924,8 +902,8 @@ export function Settings() {
         </div>
       </Card>
 
-      {/* Hidden Branding Settings - unlocked by typing 331548 */}
-      {showBranding && isAdmin && <BrandingSettings />}
+      {/* Branding Settings - visible for admin users */}
+      {isAdmin && <BrandingSettings />}
       </div>
     </div>
   );
