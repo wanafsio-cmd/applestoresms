@@ -9,7 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import defaultLogo from "@/assets/334aa3a3-8497-400f-b941-84bfec2d732e.png";
+import defaultLogo from "@/assets/3926e988-d85b-4bf1-8f3e-71bdbe4a2e70.png";
 
 const queryClient = new QueryClient();
 
@@ -53,9 +53,9 @@ const App = () => {
       <div className="flex min-h-screen items-center justify-center bg-primary">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 animate-pulse shadow-xl">
-            <img src={defaultLogo} alt="BIG BOSS MOBILE SHOP" className="w-28 h-28 animate-scale-in" />
+            <img src={defaultLogo} alt="Apple Store" className="w-28 h-28 animate-scale-in" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">BIG BOSS MOBILE SHOP</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">Apple Store</h2>
           <p className="text-white/70">Loading...</p>
         </div>
       </div>

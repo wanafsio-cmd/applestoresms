@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import defaultLogo from "@/assets/77aa0cdb-3fb5-4fa9-8c46-5898ea6d7306.png";
+import defaultLogo from "@/assets/3926e988-d85b-4bf1-8f3e-71bdbe4a2e70.png";
 
 export interface ShopSettings {
   id: string;
@@ -14,8 +14,8 @@ export interface ShopSettings {
 
 const DEFAULT_SETTINGS: ShopSettings = {
   id: "",
-  shop_name: "BIG BOSS MOBILE SHOP",
-  shop_subtitle: "Sales & Inventory Management System",
+  shop_name: "Apple Store",
+  shop_subtitle: "Sales & Stock Management System",
   shop_address: "Goli No-6, Shop No-13, New Market, Karanihat, Satkania, Chittagong",
   shop_phone: "",
   logo_url: "",

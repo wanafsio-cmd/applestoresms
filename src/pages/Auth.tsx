@@ -69,7 +69,7 @@ export default function Auth() {
             <img src={logoSrc} alt={settings.shop_name} className="w-36 h-36 animate-scale-in object-cover" />
           </div>
           <h2 className="text-3xl font-bold text-white">{settings.shop_name}</h2>
-          <p className="mt-2 text-white/80 text-lg">{settings.shop_subtitle || "Sales & Inventory Management System"}</p>
+          <p className="mt-2 text-white/80 text-lg">{settings.shop_subtitle || "Sales & Stock Management System"}</p>
         </div>
 
         <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
