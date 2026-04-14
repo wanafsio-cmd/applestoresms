@@ -53,7 +53,7 @@ export function InvoiceModal({ isOpen, sale, onClose }: InvoiceModalProps) {
           {/* Company Header */}
           <div className="text-center mb-8 border-b pb-4">
             <h1 className="text-3xl font-bold text-primary mb-2">👑 {settings.shop_name}</h1>
-            <p className="text-sm text-muted-foreground">{settings.shop_subtitle || "মোবাইল শপ ম্যানেজমেন্ট সিস্টেম"}</p>
+            <p className="text-sm text-muted-foreground">{settings.shop_subtitle || "Sales & Stock Management System"}</p>
             <p className="text-xs text-muted-foreground mt-1">ঠিকানা: {settings.shop_address || "আপনার দোকানের ঠিকানা"}</p>
             {settings.shop_phone && <p className="text-xs text-muted-foreground">ফোন: {settings.shop_phone}</p>}
           </div>
@@ -124,7 +124,7 @@ export function InvoiceModal({ isOpen, sale, onClose }: InvoiceModalProps) {
           {/* Footer */}
           <div className="text-center border-t pt-4 text-sm text-muted-foreground">
             <p>ধন্যবাদ আপনার ক্রয়ের জন্য!</p>
-            <p className="mt-2">{settings.shop_name} - আপনার বিশ্বস্ত মোবাইল শপ</p>
+            <p className="mt-2">{settings.shop_name} - Sales & Stock Management System</p>
           </div>
         </div>
       </div>
