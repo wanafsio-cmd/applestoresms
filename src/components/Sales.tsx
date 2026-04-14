@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { Search, Calendar, User, CreditCard, Package, Filter, X, FileDown, FileSpreadsheet } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { DueCollection } from "./DueCollection";
 
 interface SaleDetail {
   id: string;
@@ -634,6 +635,14 @@ export function Sales() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Due Collection */}
+              {Number((selectedSale as any).due_amount) > 0 && (
+                <DueCollection
+                  saleId={selectedSale.id}
+                  currentDue={Number((selectedSale as any).due_amount)}
+                />
+              )}
 
               {/* Notes */}
               {selectedSale.notes && (
