@@ -114,6 +114,18 @@ export function InvoiceModal({ isOpen, sale, onClose }: InvoiceModalProps) {
                 <span className="font-semibold">সাবটোটাল:</span>
                 <span>৳{Number(sale.total_amount).toLocaleString('bn-BD')}</span>
               </div>
+              {Number(sale.paid_amount) > 0 && (
+                <div className="flex justify-between py-1">
+                  <span className="text-sm">প্রদত্ত:</span>
+                  <span className="text-sm">৳{Number(sale.paid_amount).toLocaleString('bn-BD')}</span>
+                </div>
+              )}
+              {Number(sale.due_amount) > 0 && (
+                <div className="flex justify-between py-1 text-red-600">
+                  <span className="text-sm font-semibold">বাকি:</span>
+                  <span className="text-sm font-semibold">৳{Number(sale.due_amount).toLocaleString('bn-BD')}</span>
+                </div>
+              )}
               <div className="flex justify-between py-2 border-t-2 border-gray-800">
                 <span className="font-bold text-lg">সর্বমোট:</span>
                 <span className="font-bold text-lg">৳{Number(sale.total_amount).toLocaleString('bn-BD')}</span>
