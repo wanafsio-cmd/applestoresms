@@ -11,6 +11,7 @@ import { Settings } from "@/components/Settings";
 import { Categories } from "@/components/Categories";
 import { Sales } from "@/components/Sales";
 import { Returns } from "@/components/Returns";
+import { Investments } from "@/components/Investments";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,7 +29,8 @@ import {
   RefreshCcw, 
   FileText, 
   Settings as SettingsIcon,
-  LogOut
+  LogOut,
+  Wallet
 } from "lucide-react";
 
 interface IndexProps {
@@ -112,6 +114,7 @@ export default function Index({ user }: IndexProps) {
     { id: "products", label: "পণ্য", icon: Package, permission: 'canManageProducts' },
     { id: "pos", label: "POS", icon: ShoppingCart, permission: 'canAccessPOS' },
     { id: "sales", label: "বিক্রয়", icon: TrendingUp, permission: 'canAccessSales' },
+    { id: "investments", label: "ইনভেস্টমেন্ট", icon: Wallet, permission: 'canAccessReports' },
     { id: "reports", label: "রিপোর্ট", icon: FileText, permission: 'canAccessReports' },
     { id: "settings", label: "সেটিংস", icon: SettingsIcon, permission: 'canAccessSettings' },
   ];
@@ -145,6 +148,7 @@ export default function Index({ user }: IndexProps) {
       case "pos": return <POS />;
       case "sales": return <Sales />;
       case "returns": return <Returns />;
+      case "investments": return <Investments />;
       case "customers": return <Customers />;
       case "suppliers": return <Suppliers />;
       case "reports": return <Reports />;

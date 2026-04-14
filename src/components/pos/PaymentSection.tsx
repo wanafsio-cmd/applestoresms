@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,8 @@ interface PaymentSectionProps {
   onInstantCustomerNameChange: (name: string) => void;
   instantCustomerPhone: string;
   onInstantCustomerPhoneChange: (phone: string) => void;
+  paidAmount: number;
+  onPaidAmountChange: (amount: number) => void;
 }
 
 export function PaymentSection({
@@ -34,8 +36,17 @@ export function PaymentSection({
   onInstantCustomerNameChange,
   instantCustomerPhone,
   onInstantCustomerPhoneChange,
+  paidAmount,
+  onPaidAmountChange,
 }: PaymentSectionProps) {
   const [useInstantCustomer, setUseInstantCustomer] = useState(false);
+
+  const dueAmount = Math.max(0, total - paidAmount);
+
+  // Auto-set paid amount to total when total changes
+  useEffect(() => {
+    onPaidAmountChange(total);
+  }, [total]);
 
   return (
     <div className="space-y-3 lg:space-y-4 pt-4 border-t border-border">
@@ -117,6 +128,31 @@ export function PaymentSection({
         </Select>
       </div>
 
+      {/* Paid Amount & Due */}
+      <div className="space-y-2">
+        <label className="block text-xs lg:text-sm font-medium text-foreground">
+          প্রদত্ত টাকা (৳)
+        </label>
+        <Input
+          type="number"
+          value={paidAmount || ""}
+          onChange={(e) => onPaidAmountChange(Number(e.target.value) || 0)}
+          className="h-9"
+          placeholder="প্রদত্ত পরিমাণ"
+          min={0}
+        />
+        {dueAmount > 0 && (
+          <div className="bg-destructive/10 border border-destructive/30 p-2 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-medium text-destructive">বাকি:</span>
+              <span className="text-sm font-bold text-destructive">
+                ৳{dueAmount.toLocaleString('bn-BD')}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="bg-primary/10 p-3 lg:p-4 rounded-lg">
         <div className="flex justify-between items-center">
           <span className="text-base lg:text-lg font-semibold text-foreground">সর্বমোট:</span>
@@ -124,6 +160,12 @@ export function PaymentSection({
             ৳{total.toLocaleString('bn-BD')}
           </span>
         </div>
+        {dueAmount > 0 && (
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-xs text-muted-foreground">প্রদত্ত: ৳{paidAmount.toLocaleString('bn-BD')}</span>
+            <span className="text-xs text-destructive font-semibold">বাকি: ৳{dueAmount.toLocaleString('bn-BD')}</span>
+          </div>
+        )}
       </div>
 
       <Button
@@ -131,7 +173,7 @@ export function PaymentSection({
         onClick={onCompleteSale}
         disabled={cartEmpty || isProcessing}
       >
-        {isProcessing ? "প্রক্রিয়াকরণ..." : "💰 বিক্রয় সম্পন্ন করুন"}
+        {isProcessing ? "প্রক্রিয়াকরণ..." : dueAmount > 0 ? "💰 বাকিতে বিক্রয় করুন" : "💰 বিক্রয় সম্পন্ন করুন"}
       </Button>
     </div>
   );

@@ -110,6 +110,159 @@ export type Database = {
         }
         Relationships: []
       }
+      due_payments: {
+        Row: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          payment_method: string
+          sale_id: string
+        }
+        Insert: {
+          amount: number
+          collected_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          sale_id: string
+        }
+        Update: {
+          amount?: number
+          collected_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "due_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          entry_type: string
+          id: string
+          notes: string | null
+          purpose: string | null
+          sector_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          entry_type?: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          sector_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          entry_type?: string
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_entries_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "investment_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_incomes: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          income_date: string
+          notes: string | null
+          purpose: string | null
+          sector_id: string
+          source: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          income_date?: string
+          notes?: string | null
+          purpose?: string | null
+          sector_id: string
+          source?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          income_date?: string
+          notes?: string | null
+          purpose?: string | null
+          sector_id?: string
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_incomes_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "investment_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_sectors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           barcode: string | null
@@ -446,10 +599,12 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string | null
+          due_amount: number
           id: string
           instant_customer_name: string | null
           instant_customer_phone: string | null
           notes: string | null
+          paid_amount: number
           payment_method: string | null
           status: string | null
           total_amount: number
@@ -459,10 +614,12 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id?: string | null
+          due_amount?: number
           id?: string
           instant_customer_name?: string | null
           instant_customer_phone?: string | null
           notes?: string | null
+          paid_amount?: number
           payment_method?: string | null
           status?: string | null
           total_amount?: number
@@ -472,10 +629,12 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string | null
+          due_amount?: number
           id?: string
           instant_customer_name?: string | null
           instant_customer_phone?: string | null
           notes?: string | null
+          paid_amount?: number
           payment_method?: string | null
           status?: string | null
           total_amount?: number

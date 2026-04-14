@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { Search, Calendar, User, CreditCard, Package, Filter, X, FileDown, FileSpreadsheet } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { DueCollection } from "./DueCollection";
 
 interface SaleDetail {
   id: string;
@@ -438,6 +439,11 @@ export function Sales() {
                       <div className="text-xl md:text-2xl font-bold text-accent">
                         ৳{Number(sale.total_amount).toLocaleString()}
                       </div>
+                      {Number((sale as any).due_amount) > 0 && (
+                        <div className="text-xs font-semibold text-destructive">
+                          বাকি: ৳{Number((sale as any).due_amount).toLocaleString()}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -615,8 +621,28 @@ export function Sales() {
                       ৳{Number(selectedSale.total_amount).toLocaleString()}
                     </span>
                   </div>
+                  {Number((selectedSale as any).paid_amount) > 0 && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm text-muted-foreground">Paid:</span>
+                      <span className="text-sm">৳{Number((selectedSale as any).paid_amount).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {Number((selectedSale as any).due_amount) > 0 && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm font-semibold text-destructive">Due:</span>
+                      <span className="text-sm font-bold text-destructive">৳{Number((selectedSale as any).due_amount).toLocaleString()}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Due Collection */}
+              {Number((selectedSale as any).due_amount) > 0 && (
+                <DueCollection
+                  saleId={selectedSale.id}
+                  currentDue={Number((selectedSale as any).due_amount)}
+                />
+              )}
 
               {/* Notes */}
               {selectedSale.notes && (
