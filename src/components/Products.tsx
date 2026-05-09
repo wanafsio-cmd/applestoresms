@@ -41,14 +41,28 @@ export function Products() {
     ram: "",
     storage: "",
     battery: "",
+    supplier_id: "",
     supplier_name: "",
     supplier_mobile: "",
     supplier_nid: "",
     warranty_expiry_date: "",
     warranty_status: "no_warranty",
   });
+  const [supplierMode, setSupplierMode] = useState<"existing" | "custom">("existing");
+  const [showInstantSupplier, setShowInstantSupplier] = useState(false);
+  const [instantSupplierName, setInstantSupplierName] = useState("");
+  const [instantSupplierPhone, setInstantSupplierPhone] = useState("");
 
   const queryClient = useQueryClient();
+
+  const { data: suppliersList } = useQuery({
+    queryKey: ["suppliers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("suppliers").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: products } = useQuery({
     queryKey: ["products"],
@@ -139,12 +153,14 @@ export function Products() {
       ram: "",
       storage: "",
       battery: "",
+      supplier_id: "",
       supplier_name: "",
       supplier_mobile: "",
       supplier_nid: "",
       warranty_expiry_date: "",
       warranty_status: "no_warranty",
     });
+    setSupplierMode("existing");
   };
 
   const generateSKU = () => {
