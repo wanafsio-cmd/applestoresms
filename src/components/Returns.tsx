@@ -151,8 +151,26 @@ export function Returns() {
       toast.error(error.message || "রিটার্ন প্রসেস করতে ব্যর্থ");
     },
   });
+  const deleteReturnMutation = useMutation({
+    mutationFn: async (returnItem: any) => {
+      // if completed, restore product stock by deducting refund effect
+      if (returnItem.status === "completed") {
+        const { data: prod } = await supabase.from("products").select("stock_quantity").eq("id", returnItem.product_id).single();
+        if (prod) {
+          await supabase.from("products").update({ stock_quantity: Math.max(0, prod.stock_quantity - returnItem.quantity) }).eq("id", returnItem.product_id);
+        }
+      }
+      const { error } = await supabase.from("returns").delete().eq("id", returnItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["returns"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("রিটার্ন মুছে ফেলা হয়েছে");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
-  const handleSubmitReturn = () => {
     if (!selectedItem) {
       toast.error("রিটার্নের জন্য একটি আইটেম নির্বাচন করুন");
       return;
