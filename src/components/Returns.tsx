@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
-import { RotateCcw, Search, Package, Calendar, User, CheckCircle, XCircle, Clock } from "lucide-react";
+import { RotateCcw, Search, Package, Calendar, CheckCircle, XCircle, Clock, Trash2, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export function Returns() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -22,6 +23,9 @@ export function Returns() {
   const [reasonCode, setReasonCode] = useState("defective");
   const [reasonNotes, setReasonNotes] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [textFilter, setTextFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const queryClient = useQueryClient();
 
