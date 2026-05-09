@@ -171,6 +171,7 @@ export function Returns() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const handleSubmitReturn = () => {
     if (!selectedItem) {
       toast.error("রিটার্নের জন্য একটি আইটেম নির্বাচন করুন");
       return;
