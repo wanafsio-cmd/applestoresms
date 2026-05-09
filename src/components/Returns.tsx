@@ -253,14 +253,67 @@ export function Returns() {
     return reasons[code] || code;
   };
 
-  const filteredReturns = returns?.filter(ret => 
-    filterStatus === "all" || ret.status === filterStatus
-  ) || [];
+  const filteredReturns = useMemo(() => returns?.filter(ret => {
+    if (filterStatus !== "all" && ret.status !== filterStatus) return false;
+    if (textFilter) {
+      const t = textFilter.toLowerCase();
+      const inProduct = ret.products?.name?.toLowerCase().includes(t) || ret.products?.imei?.toLowerCase().includes(t) || ret.products?.brand?.toLowerCase().includes(t);
+      const inCustomer = ret.sales?.customers?.name?.toLowerCase().includes(t) || ret.sales?.customers?.phone?.includes(t);
+      const inId = ret.id.toLowerCase().includes(t) || ret.sale_id.toLowerCase().includes(t);
+      if (!inProduct && !inCustomer && !inId) return false;
+    }
+    if (dateFrom && new Date(ret.created_at) < new Date(dateFrom)) return false;
+    if (dateTo && new Date(ret.created_at) > new Date(dateTo + "T23:59:59")) return false;
+    return true;
+  }) || [], [returns, filterStatus, textFilter, dateFrom, dateTo]);
 
   // Stats
   const pendingCount = returns?.filter(r => r.status === "pending").length || 0;
   const completedCount = returns?.filter(r => r.status === "completed").length || 0;
   const totalRefund = returns?.filter(r => r.status === "completed").reduce((sum, r) => sum + Number(r.refund_amount), 0) || 0;
+
+  const exportExcel = () => {
+    if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
+    const rows = filteredReturns.map((r, i) => ({
+      'ক্রমিক': i + 1,
+      'রিটার্ন ID': r.id.slice(0, 8),
+      'বিক্রয় ID': r.sale_id.slice(0, 8),
+      'প্রোডাক্ট': r.products?.name || '',
+      'IMEI': r.products?.imei || '',
+      'ক্রেতা': r.sales?.customers?.name || 'সাধারণ',
+      'পরিমাণ': r.quantity,
+      'রিফান্ড (৳)': Number(r.refund_amount),
+      'কারণ': getReasonLabel(r.reason_code),
+      'স্ট্যাটাস': r.status,
+      'তারিখ': new Date(r.created_at).toLocaleDateString('bn-BD'),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Returns');
+    XLSX.writeFile(wb, `Apple_Store_Returns_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Excel ডাউনলোড হয়েছে");
+  };
+
+  const exportPDF = () => {
+    if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
+    const w = window.open('', '_blank');
+    if (!w) { toast.error("পপআপ ব্লক"); return; }
+    const totalAmt = filteredReturns.reduce((s, r) => s + Number(r.refund_amount), 0);
+    w.document.write(`<html><head><title>Apple Store - Returns Report</title><style>
+      body{font-family:Arial;padding:20px;font-size:12px}
+      h1{text-align:center;color:#0066cc}.summary{background:#f5f5f5;padding:10px;margin:15px 0;border-radius:6px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th,td{border:1px solid #ddd;padding:6px;text-align:left}
+      th{background:#0066cc;color:white}
+      tr:nth-child(even){background:#f9f9f9}
+    </style></head><body>
+      <h1>Apple Store - রিটার্ন রিপোর্ট</h1>
+      <div class="summary"><b>মোট রিটার্ন:</b> ${filteredReturns.length} | <b>মোট রিফান্ড:</b> ৳${totalAmt.toLocaleString('bn-BD')} | <b>তারিখ:</b> ${new Date().toLocaleDateString('bn-BD')}</div>
+      <table><thead><tr><th>#</th><th>প্রোডাক্ট</th><th>IMEI</th><th>ক্রেতা</th><th>পরিমাণ</th><th>রিফান্ড</th><th>কারণ</th><th>স্ট্যাটাস</th><th>তারিখ</th></tr></thead><tbody>
+      ${filteredReturns.map((r, i) => `<tr><td>${i+1}</td><td>${r.products?.name || ''}</td><td>${r.products?.imei || '-'}</td><td>${r.sales?.customers?.name || 'সাধারণ'}</td><td>${r.quantity}</td><td>৳${Number(r.refund_amount).toLocaleString('bn-BD')}</td><td>${getReasonLabel(r.reason_code)}</td><td>${r.status}</td><td>${new Date(r.created_at).toLocaleDateString('bn-BD')}</td></tr>`).join('')}
+      </tbody></table></body></html>`);
+    w.document.close(); w.focus(); setTimeout(() => { w.print(); }, 300);
+  };
 
   if (isLoading) {
     return (
