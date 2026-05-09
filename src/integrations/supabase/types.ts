@@ -284,6 +284,7 @@ export type Database = {
           sku: string | null
           stock_quantity: number
           storage: string | null
+          supplier_id: string | null
           supplier_mobile: string | null
           supplier_name: string | null
           supplier_nid: string | null
@@ -312,6 +313,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           storage?: string | null
+          supplier_id?: string | null
           supplier_mobile?: string | null
           supplier_name?: string | null
           supplier_nid?: string | null
@@ -340,6 +342,7 @@ export type Database = {
           sku?: string | null
           stock_quantity?: number
           storage?: string | null
+          supplier_id?: string | null
           supplier_mobile?: string | null
           supplier_name?: string | null
           supplier_nid?: string | null
@@ -683,6 +686,51 @@ export type Database = {
           shop_name?: string
           shop_phone?: string | null
           shop_subtitle?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_returns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          reason: string
+          return_amount: number
+          status: string
+          supplier_id: string | null
+          supplier_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity?: number
+          reason?: string
+          return_amount?: number
+          status?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string
+          return_amount?: number
+          status?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
           updated_at?: string
         }
         Relationships: []
