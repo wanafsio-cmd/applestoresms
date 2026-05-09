@@ -528,23 +528,37 @@ export function Returns() {
           </Card>
         </div>
 
-        {/* Filter */}
+        {/* Filter & Export */}
         <Card className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <label className="text-sm font-medium">স্ট্যাটাস ফিল্টার:</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input className="pl-9" placeholder="প্রোডাক্ট, IMEI, ক্রেতা, ID দিয়ে খুঁজুন" value={textFilter} onChange={e => setTextFilter(e.target.value)} />
+            </div>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="শুরু" />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} placeholder="শেষ" />
+          </div>
+          <div className="flex flex-wrap gap-2 items-center mt-3">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">সকল</SelectItem>
+                <SelectItem value="all">সকল স্ট্যাটাস</SelectItem>
                 <SelectItem value="pending">অপেক্ষমাণ</SelectItem>
                 <SelectItem value="approved">অনুমোদিত</SelectItem>
                 <SelectItem value="completed">সম্পন্ন</SelectItem>
                 <SelectItem value="rejected">প্রত্যাখ্যাত</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={() => { setTextFilter(""); setDateFrom(""); setDateTo(""); setFilterStatus("all"); }}>রিসেট</Button>
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" onClick={exportExcel} className="border-green-500 text-green-600">
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportPDF} className="border-red-500 text-red-600">
+              <FileText className="w-4 h-4 mr-1" /> PDF
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">দেখানো হচ্ছে: {filteredReturns.length}টি</p>
         </Card>
       </div>
 
@@ -607,28 +621,36 @@ export function Returns() {
                   <div className="flex gap-2 pt-3 border-t">
                     <Button
                       size="sm"
-                      onClick={() => processReturnMutation.mutate({ 
-                        returnId: returnItem.id, 
-                        status: "completed" 
-                      })}
+                      onClick={() => processReturnMutation.mutate({ returnId: returnItem.id, status: "completed" })}
                       disabled={processReturnMutation.isPending}
                       className="gap-1"
                     >
-                      <CheckCircle className="h-4 w-4" />
-                      অনুমোদন ও সম্পন্ন
+                      <CheckCircle className="h-4 w-4" /> অনুমোদন ও সম্পন্ন
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => processReturnMutation.mutate({ 
-                        returnId: returnItem.id, 
-                        status: "rejected" 
-                      })}
+                      onClick={() => processReturnMutation.mutate({ returnId: returnItem.id, status: "rejected" })}
                       disabled={processReturnMutation.isPending}
                       className="gap-1"
                     >
-                      <XCircle className="h-4 w-4" />
-                      প্রত্যাখ্যান
+                      <XCircle className="h-4 w-4" /> প্রত্যাখ্যান
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { if (confirm("এই রিটার্নটি মুছে ফেলবেন?")) deleteReturnMutation.mutate(returnItem); }}
+                      className="gap-1 ml-auto"
+                    >
+                      <Trash2 className="h-4 w-4" /> মুছুন
+                    </Button>
+                  </div>
+                )}
+                {returnItem.status !== "pending" && (
+                  <div className="flex justify-end pt-2">
+                    <Button size="sm" variant="ghost" className="text-destructive"
+                      onClick={() => { if (confirm("এই রিটার্নটি মুছে ফেলবেন? (কম্প্লিটেড হলে স্টক সমন্বয় হবে)")) deleteReturnMutation.mutate(returnItem); }}>
+                      <Trash2 className="h-4 w-4 mr-1" /> মুছুন
                     </Button>
                   </div>
                 )}
@@ -639,9 +661,7 @@ export function Returns() {
           <Card className="p-12 text-center">
             <div className="text-6xl mb-4">📦</div>
             <h3 className="text-xl font-semibold mb-2 text-foreground">কোনো রিটার্ন নেই</h3>
-            <p className="text-muted-foreground">
-              রিটার্ন তৈরি করলে এখানে দেখাবে
-            </p>
+            <p className="text-muted-foreground">রিটার্ন তৈরি করলে এখানে দেখাবে</p>
           </Card>
         )}
       </div>
