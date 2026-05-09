@@ -237,6 +237,7 @@ export function Products() {
       stock_quantity: 1,
       low_stock_threshold: 0,
       category_id: formData.category_id || null,
+      supplier_id: formData.supplier_id || null,
     };
 
     if (editingProduct) {
@@ -682,34 +683,101 @@ export function Products() {
 
               {/* Supplier Information (Optional) */}
               <div className="pt-4 border-t border-border">
-                <h3 className="text-sm font-semibold mb-3 text-foreground">Supplier Information (Optional)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Supplier Name</label>
-                    <Input
-                      value={formData.supplier_name}
-                      onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
-                      placeholder="Enter supplier name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Supplier Mobile</label>
-                    <Input
-                      value={formData.supplier_mobile}
-                      onChange={(e) => setFormData({ ...formData, supplier_mobile: e.target.value })}
-                      placeholder="Enter mobile number"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium mb-2">Supplier NID</label>
-                    <Input
-                      value={formData.supplier_nid}
-                      onChange={(e) => setFormData({ ...formData, supplier_nid: e.target.value })}
-                      placeholder="Enter NID number"
-                    />
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">Supplier Information (Optional)</h3>
+                  <div className="flex gap-1 text-xs">
+                    <button type="button" onClick={() => setSupplierMode("existing")}
+                      className={`px-2 py-1 rounded ${supplierMode === "existing" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                      নিবন্ধিত
+                    </button>
+                    <button type="button" onClick={() => setSupplierMode("custom")}
+                      className={`px-2 py-1 rounded ${supplierMode === "custom" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                      ইন্সট্যান্ট
+                    </button>
                   </div>
                 </div>
+
+                {supplierMode === "existing" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Select Supplier</label>
+                      <div className="flex gap-2">
+                        <Select
+                          value={formData.supplier_id}
+                          onValueChange={(v) => {
+                            const sup = suppliersList?.find((s: any) => s.id === v);
+                            setFormData({
+                              ...formData,
+                              supplier_id: v,
+                              supplier_name: sup?.name || "",
+                              supplier_mobile: sup?.phone || "",
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="সাপ্লায়ার নির্বাচন করুন" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {suppliersList?.map((s: any) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name} {s.phone ? `(${s.phone})` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowInstantSupplier(true)}>
+                          + নতুন
+                        </Button>
+                      </div>
+                    </div>
+                    {formData.supplier_id && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2">সাপ্লায়ার NID</label>
+                        <Input value={formData.supplier_nid} onChange={(e) => setFormData({ ...formData, supplier_nid: e.target.value })} placeholder="NID number" />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Supplier Name</label>
+                      <Input value={formData.supplier_name} onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value, supplier_id: "" })} placeholder="ইন্সট্যান্ট সাপ্লায়ার নাম" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Supplier Mobile</label>
+                      <Input value={formData.supplier_mobile} onChange={(e) => setFormData({ ...formData, supplier_mobile: e.target.value })} placeholder="মোবাইল নম্বর" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium mb-2">Supplier NID</label>
+                      <Input value={formData.supplier_nid} onChange={(e) => setFormData({ ...formData, supplier_nid: e.target.value })} placeholder="NID number" />
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Quick add supplier dialog */}
+              {showInstantSupplier && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowInstantSupplier(false)}>
+                  <div className="bg-background rounded-lg p-5 w-full max-w-md space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="font-semibold">দ্রুত নতুন সাপ্লায়ার যোগ</h3>
+                    <Input placeholder="নাম *" value={instantSupplierName} onChange={(e) => setInstantSupplierName(e.target.value)} />
+                    <Input placeholder="ফোন" value={instantSupplierPhone} onChange={(e) => setInstantSupplierPhone(e.target.value)} />
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setShowInstantSupplier(false)}>বাতিল</Button>
+                      <Button type="button" onClick={async () => {
+                        if (!instantSupplierName.trim()) { toast.error("নাম দিন"); return; }
+                        const { data, error } = await supabase.from("suppliers").insert([{ name: instantSupplierName, phone: instantSupplierPhone }]).select().single();
+                        if (error) { toast.error(error.message); return; }
+                        queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+                        setFormData({ ...formData, supplier_id: data.id, supplier_name: data.name, supplier_mobile: data.phone || "" });
+                        setInstantSupplierName(""); setInstantSupplierPhone("");
+                        setShowInstantSupplier(false);
+                        toast.success("সাপ্লায়ার যোগ হয়েছে");
+                      }}>যোগ করুন</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Warranty Information (Optional) */}
               <div className="pt-4 border-t border-border">
