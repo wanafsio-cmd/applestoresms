@@ -263,12 +263,14 @@ export function Products() {
       ram: product.ram || "",
       storage: product.storage || "",
       battery: product.battery || "",
+      supplier_id: product.supplier_id || "",
       supplier_name: product.supplier_name || "",
       supplier_mobile: product.supplier_mobile || "",
       supplier_nid: product.supplier_nid || "",
       warranty_expiry_date: product.warranty_expiry_date || "",
       warranty_status: product.warranty_status || "no_warranty",
     });
+    setSupplierMode(product.supplier_id ? "existing" : (product.supplier_name ? "custom" : "existing"));
   };
 
   const filteredProducts = useMemo(() => {
