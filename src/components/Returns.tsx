@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
-import { RotateCcw, Search, Package, Calendar, User, CheckCircle, XCircle, Clock } from "lucide-react";
+import { RotateCcw, Search, Package, Calendar, CheckCircle, XCircle, Clock, Trash2, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export function Returns() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -22,6 +23,9 @@ export function Returns() {
   const [reasonCode, setReasonCode] = useState("defective");
   const [reasonNotes, setReasonNotes] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [textFilter, setTextFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -147,6 +151,25 @@ export function Returns() {
       toast.error(error.message || "রিটার্ন প্রসেস করতে ব্যর্থ");
     },
   });
+  const deleteReturnMutation = useMutation({
+    mutationFn: async (returnItem: any) => {
+      // if completed, restore product stock by deducting refund effect
+      if (returnItem.status === "completed") {
+        const { data: prod } = await supabase.from("products").select("stock_quantity").eq("id", returnItem.product_id).single();
+        if (prod) {
+          await supabase.from("products").update({ stock_quantity: Math.max(0, prod.stock_quantity - returnItem.quantity) }).eq("id", returnItem.product_id);
+        }
+      }
+      const { error } = await supabase.from("returns").delete().eq("id", returnItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["returns"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("রিটার্ন মুছে ফেলা হয়েছে");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const handleSubmitReturn = () => {
     if (!selectedItem) {
@@ -230,14 +253,67 @@ export function Returns() {
     return reasons[code] || code;
   };
 
-  const filteredReturns = returns?.filter(ret => 
-    filterStatus === "all" || ret.status === filterStatus
-  ) || [];
+  const filteredReturns = useMemo(() => returns?.filter(ret => {
+    if (filterStatus !== "all" && ret.status !== filterStatus) return false;
+    if (textFilter) {
+      const t = textFilter.toLowerCase();
+      const inProduct = ret.products?.name?.toLowerCase().includes(t) || ret.products?.imei?.toLowerCase().includes(t) || ret.products?.brand?.toLowerCase().includes(t);
+      const inCustomer = ret.sales?.customers?.name?.toLowerCase().includes(t) || ret.sales?.customers?.phone?.includes(t);
+      const inId = ret.id.toLowerCase().includes(t) || ret.sale_id.toLowerCase().includes(t);
+      if (!inProduct && !inCustomer && !inId) return false;
+    }
+    if (dateFrom && new Date(ret.created_at) < new Date(dateFrom)) return false;
+    if (dateTo && new Date(ret.created_at) > new Date(dateTo + "T23:59:59")) return false;
+    return true;
+  }) || [], [returns, filterStatus, textFilter, dateFrom, dateTo]);
 
   // Stats
   const pendingCount = returns?.filter(r => r.status === "pending").length || 0;
   const completedCount = returns?.filter(r => r.status === "completed").length || 0;
   const totalRefund = returns?.filter(r => r.status === "completed").reduce((sum, r) => sum + Number(r.refund_amount), 0) || 0;
+
+  const exportExcel = () => {
+    if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
+    const rows = filteredReturns.map((r, i) => ({
+      'ক্রমিক': i + 1,
+      'রিটার্ন ID': r.id.slice(0, 8),
+      'বিক্রয় ID': r.sale_id.slice(0, 8),
+      'প্রোডাক্ট': r.products?.name || '',
+      'IMEI': r.products?.imei || '',
+      'ক্রেতা': r.sales?.customers?.name || 'সাধারণ',
+      'পরিমাণ': r.quantity,
+      'রিফান্ড (৳)': Number(r.refund_amount),
+      'কারণ': getReasonLabel(r.reason_code),
+      'স্ট্যাটাস': r.status,
+      'তারিখ': new Date(r.created_at).toLocaleDateString('bn-BD'),
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Returns');
+    XLSX.writeFile(wb, `Apple_Store_Returns_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Excel ডাউনলোড হয়েছে");
+  };
+
+  const exportPDF = () => {
+    if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
+    const w = window.open('', '_blank');
+    if (!w) { toast.error("পপআপ ব্লক"); return; }
+    const totalAmt = filteredReturns.reduce((s, r) => s + Number(r.refund_amount), 0);
+    w.document.write(`<html><head><title>Apple Store - Returns Report</title><style>
+      body{font-family:Arial;padding:20px;font-size:12px}
+      h1{text-align:center;color:#0066cc}.summary{background:#f5f5f5;padding:10px;margin:15px 0;border-radius:6px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th,td{border:1px solid #ddd;padding:6px;text-align:left}
+      th{background:#0066cc;color:white}
+      tr:nth-child(even){background:#f9f9f9}
+    </style></head><body>
+      <h1>Apple Store - রিটার্ন রিপোর্ট</h1>
+      <div class="summary"><b>মোট রিটার্ন:</b> ${filteredReturns.length} | <b>মোট রিফান্ড:</b> ৳${totalAmt.toLocaleString('bn-BD')} | <b>তারিখ:</b> ${new Date().toLocaleDateString('bn-BD')}</div>
+      <table><thead><tr><th>#</th><th>প্রোডাক্ট</th><th>IMEI</th><th>ক্রেতা</th><th>পরিমাণ</th><th>রিফান্ড</th><th>কারণ</th><th>স্ট্যাটাস</th><th>তারিখ</th></tr></thead><tbody>
+      ${filteredReturns.map((r, i) => `<tr><td>${i+1}</td><td>${r.products?.name || ''}</td><td>${r.products?.imei || '-'}</td><td>${r.sales?.customers?.name || 'সাধারণ'}</td><td>${r.quantity}</td><td>৳${Number(r.refund_amount).toLocaleString('bn-BD')}</td><td>${getReasonLabel(r.reason_code)}</td><td>${r.status}</td><td>${new Date(r.created_at).toLocaleDateString('bn-BD')}</td></tr>`).join('')}
+      </tbody></table></body></html>`);
+    w.document.close(); w.focus(); setTimeout(() => { w.print(); }, 300);
+  };
 
   if (isLoading) {
     return (
@@ -452,23 +528,37 @@ export function Returns() {
           </Card>
         </div>
 
-        {/* Filter */}
+        {/* Filter & Export */}
         <Card className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <label className="text-sm font-medium">স্ট্যাটাস ফিল্টার:</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="relative md:col-span-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input className="pl-9" placeholder="প্রোডাক্ট, IMEI, ক্রেতা, ID দিয়ে খুঁজুন" value={textFilter} onChange={e => setTextFilter(e.target.value)} />
+            </div>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="শুরু" />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} placeholder="শেষ" />
+          </div>
+          <div className="flex flex-wrap gap-2 items-center mt-3">
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">সকল</SelectItem>
+                <SelectItem value="all">সকল স্ট্যাটাস</SelectItem>
                 <SelectItem value="pending">অপেক্ষমাণ</SelectItem>
                 <SelectItem value="approved">অনুমোদিত</SelectItem>
                 <SelectItem value="completed">সম্পন্ন</SelectItem>
                 <SelectItem value="rejected">প্রত্যাখ্যাত</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={() => { setTextFilter(""); setDateFrom(""); setDateTo(""); setFilterStatus("all"); }}>রিসেট</Button>
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" onClick={exportExcel} className="border-green-500 text-green-600">
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportPDF} className="border-red-500 text-red-600">
+              <FileText className="w-4 h-4 mr-1" /> PDF
+            </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">দেখানো হচ্ছে: {filteredReturns.length}টি</p>
         </Card>
       </div>
 
@@ -531,28 +621,36 @@ export function Returns() {
                   <div className="flex gap-2 pt-3 border-t">
                     <Button
                       size="sm"
-                      onClick={() => processReturnMutation.mutate({ 
-                        returnId: returnItem.id, 
-                        status: "completed" 
-                      })}
+                      onClick={() => processReturnMutation.mutate({ returnId: returnItem.id, status: "completed" })}
                       disabled={processReturnMutation.isPending}
                       className="gap-1"
                     >
-                      <CheckCircle className="h-4 w-4" />
-                      অনুমোদন ও সম্পন্ন
+                      <CheckCircle className="h-4 w-4" /> অনুমোদন ও সম্পন্ন
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => processReturnMutation.mutate({ 
-                        returnId: returnItem.id, 
-                        status: "rejected" 
-                      })}
+                      onClick={() => processReturnMutation.mutate({ returnId: returnItem.id, status: "rejected" })}
                       disabled={processReturnMutation.isPending}
                       className="gap-1"
                     >
-                      <XCircle className="h-4 w-4" />
-                      প্রত্যাখ্যান
+                      <XCircle className="h-4 w-4" /> প্রত্যাখ্যান
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { if (confirm("এই রিটার্নটি মুছে ফেলবেন?")) deleteReturnMutation.mutate(returnItem); }}
+                      className="gap-1 ml-auto"
+                    >
+                      <Trash2 className="h-4 w-4" /> মুছুন
+                    </Button>
+                  </div>
+                )}
+                {returnItem.status !== "pending" && (
+                  <div className="flex justify-end pt-2">
+                    <Button size="sm" variant="ghost" className="text-destructive"
+                      onClick={() => { if (confirm("এই রিটার্নটি মুছে ফেলবেন? (কম্প্লিটেড হলে স্টক সমন্বয় হবে)")) deleteReturnMutation.mutate(returnItem); }}>
+                      <Trash2 className="h-4 w-4 mr-1" /> মুছুন
                     </Button>
                   </div>
                 )}
@@ -563,9 +661,7 @@ export function Returns() {
           <Card className="p-12 text-center">
             <div className="text-6xl mb-4">📦</div>
             <h3 className="text-xl font-semibold mb-2 text-foreground">কোনো রিটার্ন নেই</h3>
-            <p className="text-muted-foreground">
-              রিটার্ন তৈরি করলে এখানে দেখাবে
-            </p>
+            <p className="text-muted-foreground">রিটার্ন তৈরি করলে এখানে দেখাবে</p>
           </Card>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,22 +7,31 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Plus, Pencil, Trash2, Building2, RotateCcw, Search, Phone, MapPin, FileText } from "lucide-react";
+import { format } from "date-fns";
+import { bn } from "date-fns/locale";
 
 export function Suppliers() {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+  const qc = useQueryClient();
+  const [supplierDialog, setSupplierDialog] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
-  const [selectedPurchase, setSelectedPurchase] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    notes: "",
-  });
+  const [returnDialog, setReturnDialog] = useState(false);
+  const [editingReturn, setEditingReturn] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [returnSupplierFilter, setReturnSupplierFilter] = useState("all");
 
-  const queryClient = useQueryClient();
+  const [supplierForm, setSupplierForm] = useState({ name: "", email: "", phone: "", address: "", notes: "" });
+  const [returnForm, setReturnForm] = useState<{
+    supplier_id: string;
+    product_id: string;
+    quantity: number;
+    return_amount: string;
+    reason: string;
+    notes: string;
+  }>({ supplier_id: "", product_id: "", quantity: 1, return_amount: "", reason: "defective", notes: "" });
 
   const { data: suppliers } = useQuery({
     queryKey: ["suppliers"],
@@ -33,20 +42,8 @@ export function Suppliers() {
     },
   });
 
-  const { data: purchases } = useQuery({
-    queryKey: ["purchases"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("*, suppliers(name), purchase_items(*, products(name))")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const { data: products } = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products-all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("products").select("*").order("name");
       if (error) throw error;
@@ -54,339 +51,363 @@ export function Suppliers() {
     },
   });
 
-  const addSupplierMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const { error } = await supabase.from("suppliers").insert([data]);
+  const { data: supplierReturns } = useQuery({
+    queryKey: ["supplier_returns"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("supplier_returns").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Supplier added successfully!");
-      setIsAddDialogOpen(false);
-      resetForm();
+      return data;
     },
   });
 
-  const updateSupplierMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase.from("suppliers").update(data).eq("id", id);
-      if (error) throw error;
+  const resetSupplierForm = () => setSupplierForm({ name: "", email: "", phone: "", address: "", notes: "" });
+  const resetReturnForm = () => setReturnForm({ supplier_id: "", product_id: "", quantity: 1, return_amount: "", reason: "defective", notes: "" });
+
+  const saveSupplier = useMutation({
+    mutationFn: async () => {
+      if (editingSupplier) {
+        const { error } = await supabase.from("suppliers").update(supplierForm).eq("id", editingSupplier.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("suppliers").insert([supplierForm]);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Supplier updated!");
-      setEditingSupplier(null);
-      resetForm();
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      toast.success(editingSupplier ? "সাপ্লায়ার আপডেট হয়েছে" : "সাপ্লায়ার যোগ হয়েছে");
+      setSupplierDialog(false); setEditingSupplier(null); resetSupplierForm();
     },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const deleteSupplierMutation = useMutation({
+  const deleteSupplier = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("suppliers").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
-      toast.success("Supplier deleted!");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["suppliers"] }); toast.success("সাপ্লায়ার মুছে ফেলা হয়েছে"); },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const receiveItemsMutation = useMutation({
-    mutationFn: async ({ purchaseId, items }: { purchaseId: string; items: any[] }) => {
+  // products available for return: belongs to chosen supplier (via supplier_id OR matching supplier_name) AND stock > 0
+  const availableProductsForReturn = useMemo(() => {
+    if (!products || !returnForm.supplier_id) return [];
+    const sup = suppliers?.find(s => s.id === returnForm.supplier_id);
+    return products.filter((p: any) =>
+      p.stock_quantity > 0 &&
+      (p.supplier_id === returnForm.supplier_id || (sup && p.supplier_name && p.supplier_name === sup.name))
+    );
+  }, [products, suppliers, returnForm.supplier_id]);
+
+  const saveReturn = useMutation({
+    mutationFn: async () => {
+      const product = products?.find((p: any) => p.id === returnForm.product_id);
+      if (!product) throw new Error("প্রোডাক্ট নির্বাচন করুন");
+      const sup = suppliers?.find(s => s.id === returnForm.supplier_id);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
 
-      // Update purchase status
-      const { error: purchaseError } = await supabase
-        .from("purchases")
-        .update({ status: "received" })
-        .eq("id", purchaseId);
-
-      if (purchaseError) throw purchaseError;
-
-      // Update stock for each item
-      for (const item of items) {
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product_id)
-          .single();
-
-        if (product) {
-          await supabase
-            .from("products")
-            .update({ stock_quantity: product.stock_quantity + item.received_quantity })
-            .eq("id", item.product_id);
-        }
-
-        // Update received quantity in purchase_items
-        await supabase
-          .from("purchase_items")
-          .update({ received_quantity: item.received_quantity })
-          .eq("purchase_id", purchaseId)
-          .eq("product_id", item.product_id);
+      if (editingReturn) {
+        const { error } = await supabase.from("supplier_returns").update({
+          quantity: returnForm.quantity,
+          return_amount: Number(returnForm.return_amount) || product.cost * returnForm.quantity,
+          reason: returnForm.reason,
+          notes: returnForm.notes,
+        }).eq("id", editingReturn.id);
+        if (error) throw error;
+      } else {
+        // ensure product not yet sold (stock > 0)
+        if (product.stock_quantity < returnForm.quantity) throw new Error("পর্যাপ্ত স্টক নেই বা ইতিমধ্যে বিক্রি হয়েছে");
+        const { error } = await supabase.from("supplier_returns").insert({
+          product_id: product.id,
+          supplier_id: returnForm.supplier_id,
+          supplier_name: sup?.name || product.supplier_name,
+          quantity: returnForm.quantity,
+          return_amount: Number(returnForm.return_amount) || product.cost * returnForm.quantity,
+          reason: returnForm.reason,
+          notes: returnForm.notes,
+          status: "completed",
+          created_by: user?.id,
+        });
+        if (error) throw error;
+        // reduce product stock
+        await supabase.from("products").update({
+          stock_quantity: Math.max(0, product.stock_quantity - returnForm.quantity)
+        }).eq("id", product.id);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchases"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Purchase received successfully!");
-      setSelectedPurchase(null);
+      qc.invalidateQueries({ queryKey: ["supplier_returns"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      toast.success(editingReturn ? "সাপ্লায়ার রিটার্ন আপডেট" : "সাপ্লায়ার রিটার্ন সফল");
+      setReturnDialog(false); setEditingReturn(null); resetReturnForm();
     },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      notes: "",
-    });
+  const deleteReturn = useMutation({
+    mutationFn: async (ret: any) => {
+      // restore stock
+      const product = products?.find((p: any) => p.id === ret.product_id);
+      if (product) {
+        await supabase.from("products").update({
+          stock_quantity: product.stock_quantity + ret.quantity
+        }).eq("id", product.id);
+      }
+      const { error } = await supabase.from("supplier_returns").delete().eq("id", ret.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["supplier_returns"] });
+      qc.invalidateQueries({ queryKey: ["products-all"] });
+      toast.success("রিটার্ন মুছে ফেলা হয়েছে এবং স্টক ফিরিয়ে আনা হয়েছে");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startEditSupplier = (s: any) => {
+    setEditingSupplier(s);
+    setSupplierForm({ name: s.name || "", email: s.email || "", phone: s.phone || "", address: s.address || "", notes: s.notes || "" });
+    setSupplierDialog(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingSupplier) {
-      updateSupplierMutation.mutate({ id: editingSupplier.id, data: formData });
-    } else {
-      addSupplierMutation.mutate(formData);
-    }
+  const startEditReturn = (r: any) => {
+    setEditingReturn(r);
+    setReturnForm({
+      supplier_id: r.supplier_id || "",
+      product_id: r.product_id,
+      quantity: r.quantity,
+      return_amount: String(r.return_amount),
+      reason: r.reason,
+      notes: r.notes || "",
+    });
+    setReturnDialog(true);
   };
 
-  const startEdit = (supplier: any) => {
-    setEditingSupplier(supplier);
-    setFormData({
-      name: supplier.name || "",
-      email: supplier.email || "",
-      phone: supplier.phone || "",
-      address: supplier.address || "",
-      notes: supplier.notes || "",
-    });
-  };
+  const filteredSuppliers = useMemo(() => suppliers?.filter(s =>
+    !search || s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.phone?.includes(search) || s.email?.toLowerCase().includes(search.toLowerCase())
+  ) || [], [suppliers, search]);
 
-  const handleReceivePurchase = (purchase: any) => {
-    const items = purchase.purchase_items.map((item: any) => ({
-      ...item,
-      received_quantity: item.quantity,
-    }));
-    
-    receiveItemsMutation.mutate({
-      purchaseId: purchase.id,
-      items,
-    });
-  };
+  const filteredReturns = useMemo(() => supplierReturns?.filter(r =>
+    returnSupplierFilter === "all" || r.supplier_id === returnSupplierFilter
+  ) || [], [supplierReturns, returnSupplierFilter]);
+
+  const totalReturnAmount = filteredReturns.reduce((s, r) => s + Number(r.return_amount), 0);
+
+  const productNameById = (id: string) => products?.find((p: any) => p.id === id)?.name || "—";
+  const productImeiById = (id: string) => products?.find((p: any) => p.id === id)?.imei || "";
 
   return (
-    <div className="flex flex-col h-screen animate-fade-in">
-      {/* Fixed Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-border pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Suppliers & Purchases</h1>
-            <p className="text-muted-foreground mt-1">Manage suppliers and purchase orders</p>
-          </div>
-        <Dialog open={isAddDialogOpen || !!editingSupplier} onOpenChange={(open) => {
-          if (!open) {
-            setIsAddDialogOpen(false);
-            setEditingSupplier(null);
-            resetForm();
-          }
-        }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-gradient-to-r from-primary to-accent">
-              ➕ Add Supplier
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingSupplier ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Name *</label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Phone</label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Address</label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Notes</label>
-                <Input
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddDialogOpen(false);
-                    setEditingSupplier(null);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-gradient-to-r from-primary to-accent">
-                  {editingSupplier ? "Update" : "Add"} Supplier
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+          <Building2 className="w-7 h-7 text-primary" /> সাপ্লায়ার ম্যানেজমেন্ট
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">সাপ্লায়ার ও সাপ্লায়ার রিটার্ণ ব্যবস্থাপনা</p>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        <Tabs defaultValue="suppliers" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="suppliers">Suppliers ({suppliers?.length || 0})</TabsTrigger>
-          <TabsTrigger value="purchases">Purchase Orders ({purchases?.length || 0})</TabsTrigger>
+      <Tabs defaultValue="suppliers">
+        <TabsList className="grid grid-cols-2 w-full max-w-md">
+          <TabsTrigger value="suppliers">সাপ্লায়ার ({suppliers?.length || 0})</TabsTrigger>
+          <TabsTrigger value="returns">সাপ্লায়ার রিটার্ণ ({supplierReturns?.length || 0})</TabsTrigger>
         </TabsList>
 
+        {/* Suppliers tab */}
         <TabsContent value="suppliers" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {suppliers?.map((supplier) => (
-              <Card key={supplier.id} className="p-6 card-hover">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">{supplier.name}</h3>
-                      {supplier.email && (
-                        <p className="text-sm text-muted-foreground mt-1">📧 {supplier.email}</p>
-                      )}
-                      {supplier.phone && (
-                        <p className="text-sm text-muted-foreground">📞 {supplier.phone}</p>
-                      )}
-                    </div>
-                    <div className="text-3xl">🏭</div>
-                  </div>
-                  {supplier.address && (
-                    <p className="text-sm text-muted-foreground">📍 {supplier.address}</p>
-                  )}
-                  {supplier.notes && (
-                    <p className="text-sm text-muted-foreground italic">"{supplier.notes}"</p>
-                  )}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => startEdit(supplier)}
-                      className="flex-1"
-                    >
-                      ✏️ Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => {
-                        if (confirm("Delete this supplier?")) {
-                          deleteSupplierMutation.mutate(supplier.id);
-                        }
-                      }}
-                      className="flex-1"
-                    >
-                      🗑️ Delete
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input className="pl-9" placeholder="নাম, ফোন বা ইমেইল দিয়ে খুঁজুন" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <Dialog open={supplierDialog} onOpenChange={(o) => { if (!o) { setEditingSupplier(null); resetSupplierForm(); } setSupplierDialog(o); }}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-primary to-accent">
+                  <Plus className="w-4 h-4 mr-1" /> নতুন সাপ্লায়ার
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{editingSupplier ? "সাপ্লায়ার এডিট" : "নতুন সাপ্লায়ার"}</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); saveSupplier.mutate(); }} className="space-y-3">
+                  <Input required placeholder="নাম *" value={supplierForm.name} onChange={e => setSupplierForm({ ...supplierForm, name: e.target.value })} />
+                  <Input placeholder="ফোন" value={supplierForm.phone} onChange={e => setSupplierForm({ ...supplierForm, phone: e.target.value })} />
+                  <Input type="email" placeholder="ইমেইল" value={supplierForm.email} onChange={e => setSupplierForm({ ...supplierForm, email: e.target.value })} />
+                  <Input placeholder="ঠিকানা" value={supplierForm.address} onChange={e => setSupplierForm({ ...supplierForm, address: e.target.value })} />
+                  <Textarea placeholder="নোটস" value={supplierForm.notes} onChange={e => setSupplierForm({ ...supplierForm, notes: e.target.value })} />
+                  <Button type="submit" className="w-full">{editingSupplier ? "আপডেট" : "যোগ করুন"}</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {(!suppliers || suppliers.length === 0) && (
-            <Card className="p-12 text-center">
-              <div className="text-6xl mb-4">🏭</div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">No suppliers yet</h3>
-              <p className="text-muted-foreground">Add your first supplier!</p>
-            </Card>
+          {filteredSuppliers.length === 0 ? (
+            <Card className="p-12 text-center text-muted-foreground">কোনো সাপ্লায়ার নেই</Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredSuppliers.map(s => {
+                const supplied = products?.filter((p: any) => p.supplier_id === s.id || p.supplier_name === s.name).length || 0;
+                const returnsCount = supplierReturns?.filter(r => r.supplier_id === s.id).length || 0;
+                return (
+                  <Card key={s.id} className="p-5 card-hover">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-bold text-lg">{s.name}</h3>
+                        {s.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="w-3 h-3" />{s.phone}</p>}
+                        {s.address && <p className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" />{s.address}</p>}
+                      </div>
+                      <Building2 className="w-8 h-8 text-primary/40" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="p-2 rounded bg-muted text-center">
+                        <p className="text-[10px] text-muted-foreground">সরবরাহকৃত</p>
+                        <p className="text-sm font-bold">{supplied}</p>
+                      </div>
+                      <div className="p-2 rounded bg-muted text-center">
+                        <p className="text-[10px] text-muted-foreground">রিটার্ণ</p>
+                        <p className="text-sm font-bold text-destructive">{returnsCount}</p>
+                      </div>
+                    </div>
+                    {s.notes && <p className="text-xs italic text-muted-foreground mb-2">"{s.notes}"</p>}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => startEditSupplier(s)}>
+                        <Pencil className="w-3 h-3 mr-1" /> এডিট
+                      </Button>
+                      <Button size="sm" variant="destructive" className="flex-1" onClick={() => { if (confirm("মুছে ফেলবেন?")) deleteSupplier.mutate(s.id); }}>
+                        <Trash2 className="w-3 h-3 mr-1" /> মুছুন
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </TabsContent>
 
-        <TabsContent value="purchases" className="space-y-4">
-          <div className="space-y-4">
-            {purchases?.map((purchase) => (
-              <Card key={purchase.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
+        {/* Supplier Returns tab */}
+        <TabsContent value="returns" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">মোট রিটার্ণ</p>
+              <p className="text-2xl font-bold text-destructive">{filteredReturns.length}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">মোট রিটার্ণ মূল্য</p>
+              <p className="text-2xl font-bold text-primary">৳{totalReturnAmount.toLocaleString('bn-BD')}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs text-muted-foreground">ফিল্টার</p>
+              <Select value={returnSupplierFilter} onValueChange={setReturnSupplierFilter}>
+                <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সকল সাপ্লায়ার</SelectItem>
+                  {suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </Card>
+          </div>
+
+          <div className="flex justify-end">
+            <Dialog open={returnDialog} onOpenChange={(o) => { if (!o) { setEditingReturn(null); resetReturnForm(); } setReturnDialog(o); }}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-destructive to-orange-500">
+                  <RotateCcw className="w-4 h-4 mr-1" /> নতুন সাপ্লায়ার রিটার্ণ
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>{editingReturn ? "রিটার্ণ এডিট" : "সাপ্লায়ারে পণ্য রিটার্ণ"}</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); saveReturn.mutate(); }} className="space-y-3">
                   <div>
-                    <h3 className="font-semibold text-lg text-foreground">PO #{purchase.purchase_number}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Supplier: {purchase.suppliers?.name || "Unknown"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Date: {new Date(purchase.created_at).toLocaleDateString()}
-                    </p>
+                    <label className="text-sm font-medium">সাপ্লায়ার *</label>
+                    <Select value={returnForm.supplier_id} onValueChange={v => setReturnForm({ ...returnForm, supplier_id: v, product_id: "" })} disabled={!!editingReturn}>
+                      <SelectTrigger><SelectValue placeholder="সাপ্লায়ার নির্বাচন করুন" /></SelectTrigger>
+                      <SelectContent>
+                        {suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    purchase.status === 'received' ? 'bg-green-100 text-green-700' :
-                    purchase.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {purchase.status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  {purchase.purchase_items?.map((item: any) => (
-                    <div key={item.id} className="flex justify-between text-sm p-2 bg-muted rounded">
-                      <span>{item.products?.name || "Product"}</span>
-                      <span>Qty: {item.quantity} | Cost: ${Number(item.unit_cost).toFixed(2)}</span>
+                  <div>
+                    <label className="text-sm font-medium">প্রোডাক্ট * (শুধুমাত্র অবিক্রিত)</label>
+                    <Select value={returnForm.product_id} onValueChange={v => {
+                      const p = products?.find((x: any) => x.id === v);
+                      setReturnForm({ ...returnForm, product_id: v, return_amount: p ? String(p.cost) : "" });
+                    }} disabled={!!editingReturn}>
+                      <SelectTrigger><SelectValue placeholder={returnForm.supplier_id ? "প্রোডাক্ট নির্বাচন করুন" : "প্রথমে সাপ্লায়ার নির্বাচন করুন"} /></SelectTrigger>
+                      <SelectContent>
+                        {availableProductsForReturn.length === 0 && returnForm.supplier_id && (
+                          <div className="p-3 text-xs text-muted-foreground">এই সাপ্লায়ারের অবিক্রিত কোনো প্রোডাক্ট নেই</div>
+                        )}
+                        {availableProductsForReturn.map((p: any) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name} {p.imei && `(${p.imei})`} - স্টক: {p.stock_quantity}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium">পরিমাণ</label>
+                      <Input type="number" min={1} value={returnForm.quantity} onChange={e => setReturnForm({ ...returnForm, quantity: parseInt(e.target.value) || 1 })} />
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="font-semibold">Total: ${Number(purchase.total_amount).toFixed(2)}</span>
-                  {purchase.status === 'pending' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleReceivePurchase(purchase)}
-                      className="bg-gradient-to-r from-primary to-accent"
-                    >
-                      📦 Receive Items
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            ))}
+                    <div>
+                      <label className="text-sm font-medium">রিটার্ণ মূল্য (৳)</label>
+                      <Input type="number" step="0.01" value={returnForm.return_amount} onChange={e => setReturnForm({ ...returnForm, return_amount: e.target.value })} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">কারণ</label>
+                    <Select value={returnForm.reason} onValueChange={v => setReturnForm({ ...returnForm, reason: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="defective">ত্রুটিপূর্ণ</SelectItem>
+                        <SelectItem value="damaged">ক্ষতিগ্রস্ত</SelectItem>
+                        <SelectItem value="wrong_item">ভুল পণ্য</SelectItem>
+                        <SelectItem value="excess_stock">অতিরিক্ত স্টক</SelectItem>
+                        <SelectItem value="quality_issue">মান সমস্যা</SelectItem>
+                        <SelectItem value="other">অন্যান্য</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Textarea placeholder="অতিরিক্ত নোটস" value={returnForm.notes} onChange={e => setReturnForm({ ...returnForm, notes: e.target.value })} />
+                  <Button type="submit" className="w-full" disabled={!returnForm.product_id}>
+                    {editingReturn ? "আপডেট" : "রিটার্ণ নিশ্চিত করুন"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {(!purchases || purchases.length === 0) && (
-            <Card className="p-12 text-center">
-              <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">No purchase orders yet</h3>
-              <p className="text-muted-foreground">Create purchase orders to track inventory from suppliers</p>
-            </Card>
+          {filteredReturns.length === 0 ? (
+            <Card className="p-12 text-center text-muted-foreground">কোনো সাপ্লায়ার রিটার্ণ নেই</Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredReturns.map(r => (
+                <Card key={r.id} className="p-4">
+                  <div className="flex flex-wrap justify-between gap-3">
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{productNameById(r.product_id)}</h3>
+                        <Badge variant="outline" className="text-[10px]">{r.reason}</Badge>
+                      </div>
+                      {productImeiById(r.product_id) && <p className="text-xs font-mono text-muted-foreground">IMEI: {productImeiById(r.product_id)}</p>}
+                      <p className="text-xs text-muted-foreground">সাপ্লায়ার: {r.supplier_name || "—"}</p>
+                      <p className="text-xs text-muted-foreground">পরিমাণ: {r.quantity} | তারিখ: {format(new Date(r.created_at), 'dd MMM yyyy', { locale: bn })}</p>
+                      {r.notes && <p className="text-xs italic mt-1">"{r.notes}"</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">রিটার্ণ মূল্য</p>
+                      <p className="text-lg font-bold text-destructive">৳{Number(r.return_amount).toLocaleString('bn-BD')}</p>
+                      <div className="flex gap-1 mt-2">
+                        <Button size="sm" variant="outline" onClick={() => startEditReturn(r)}><Pencil className="w-3 h-3" /></Button>
+                        <Button size="sm" variant="destructive" onClick={() => { if (confirm("মুছে ফেলে স্টক ফিরিয়ে আনবেন?")) deleteReturn.mutate(r); }}><Trash2 className="w-3 h-3" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </TabsContent>
-        </Tabs>
-      </div>
+      </Tabs>
     </div>
   );
 }
