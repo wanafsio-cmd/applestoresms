@@ -175,37 +175,46 @@ export function Sales() {
 
   // Excel Export
   const handleExportExcel = () => {
-    const exportData = filteredSales.map((sale) => {
-      const items = (sale.sale_items || []).map((item) => ({
-        "Sale ID": sale.id.slice(0, 8),
-        "Date": format(new Date(sale.created_at), "dd MMM yyyy"),
-        "Time": format(new Date(sale.created_at), "hh:mm a"),
-        "Customer": sale.customers?.name || "Walk-in",
-        "Product": item?.products?.name || "N/A",
-        "Brand": item?.products?.brand || "N/A",
-        "Model": item?.products?.model || "N/A",
-        "IMEI": item?.products?.imei || "N/A",
-        "Condition": item?.condition || "N/A",
-        "Quantity": item?.quantity || 0,
-        "Unit Price": item?.unit_price || 0,
-        "Total Price": item?.total_price || 0,
-        "Payment Method": sale.payment_method,
-        "Sale Total": sale.total_amount,
-      }));
-      return items;
-    }).flat();
+    safeExport(
+      () => {
+        const exportData = filteredSales.map((sale) => {
+          const items = (sale.sale_items || []).map((item) => ({
+            "Sale ID": sale.id.slice(0, 8),
+            "Date": format(new Date(sale.created_at), "dd MMM yyyy"),
+            "Time": format(new Date(sale.created_at), "hh:mm a"),
+            "Customer": sale.customers?.name || "Walk-in",
+            "Product": item?.products?.name || "N/A",
+            "Brand": item?.products?.brand || "N/A",
+            "Model": item?.products?.model || "N/A",
+            "IMEI": item?.products?.imei || "N/A",
+            "Condition": item?.condition || "N/A",
+            "Quantity": item?.quantity || 0,
+            "Unit Price": item?.unit_price || 0,
+            "Total Price": item?.total_price || 0,
+            "Payment Method": sale.payment_method,
+            "Sale Total": sale.total_amount,
+          }));
+          return items;
+        }).flat();
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
+        if (exportData.length === 0) {
+          throw new Error("কোনো ডেটা নেই");
+        }
 
-    // Auto-size columns
-    const maxWidth = 20;
-    const columns = Object.keys(exportData[0] || {});
-    worksheet["!cols"] = columns.map(() => ({ wch: maxWidth }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Sales");
 
-    XLSX.writeFile(workbook, `Sales_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+        const maxWidth = 20;
+        const columns = Object.keys(exportData[0] || {});
+        worksheet["!cols"] = columns.map(() => ({ wch: maxWidth }));
+
+        XLSX.writeFile(workbook, `Sales_Report_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+      },
+      { successMessage: "Excel ডাউনলোড হয়েছে", errorPrefix: "Excel ডাউনলোড ব্যর্থ" }
+    );
   };
+
 
   if (isLoading) {
     return (
