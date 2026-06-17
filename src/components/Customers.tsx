@@ -160,50 +160,59 @@ export function Customers() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
-          {customers?.map((customer) => (
-            <Card key={customer.id} className="p-6 card-hover">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">{customer.name}</h3>
-                    {customer.email && <p className="text-sm text-muted-foreground mt-1">📧 {customer.email}</p>}
-                    {customer.phone && <p className="text-sm text-muted-foreground">📞 {customer.phone}</p>}
+      <div className="flex-1 overflow-y-auto pb-6 space-y-4">
+        <CollapsibleSection
+          group="customers"
+          title={`Customer List (${customers?.length ?? 0})`}
+          icon={<span aria-hidden="true">👥</span>}
+          defaultOpen={true}
+          asCard={false}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {customers?.map((customer) => (
+              <Card key={customer.id} className="p-6 card-hover">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg text-foreground">{customer.name}</h3>
+                      {customer.email && <p className="text-sm text-muted-foreground mt-1">📧 {customer.email}</p>}
+                      {customer.phone && <p className="text-sm text-muted-foreground">📞 {customer.phone}</p>}
+                    </div>
+                    <div className="text-3xl">👤</div>
                   </div>
-                  <div className="text-3xl">👤</div>
+                  {customer.address && <p className="text-sm text-muted-foreground">📍 {customer.address}</p>}
+                  {customer.notes && <p className="text-sm text-muted-foreground italic">"{customer.notes}"</p>}
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => startEdit(customer)} className="flex-1">
+                      ✏️ Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this customer?")) {
+                          deleteMutation.mutate(customer.id);
+                        }
+                      }}
+                      className="flex-1"
+                    >
+                      🗑️ Delete
+                    </Button>
+                  </div>
                 </div>
-                {customer.address && <p className="text-sm text-muted-foreground">📍 {customer.address}</p>}
-                {customer.notes && <p className="text-sm text-muted-foreground italic">"{customer.notes}"</p>}
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => startEdit(customer)} className="flex-1">
-                    ✏️ Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm("Are you sure you want to delete this customer?")) {
-                        deleteMutation.mutate(customer.id);
-                      }
-                    }}
-                    className="flex-1"
-                  >
-                    🗑️ Delete
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-          {(!customers || customers.length === 0) && (
-            <Card className="p-12 text-center">
-              <div className="text-6xl mb-4">👥</div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">No customers yet</h3>
-              <p className="text-muted-foreground">Add your first customer to get started!</p>
-            </Card>
-          )}
-        </div>
+              </Card>
+            ))}
+            {(!customers || customers.length === 0) && (
+              <Card className="p-12 text-center">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">No customers yet</h3>
+                <p className="text-muted-foreground">Add your first customer to get started!</p>
+              </Card>
+            )}
+          </div>
+        </CollapsibleSection>
       </div>
+
     </div>
   );
 }
