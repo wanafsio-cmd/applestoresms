@@ -17,6 +17,7 @@ import { toUserMessage } from "@/lib/errors";
 import { safeExport } from "@/lib/safeExport";
 import { investmentEntrySchema } from "@/lib/validation";
 import { validateOrToast } from "@/lib/validateForm";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 export function Investments() {
   const qc = useQueryClient();
