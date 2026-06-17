@@ -162,7 +162,8 @@ export function Reports() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reports & Analytics</h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">Track your business performance</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <CollapseGroupControls group="reports" />
             <Button onClick={handlePrint} variant="outline" className="text-sm md:text-base">
               <span className="hidden sm:inline">📄 Export PDF</span>
               <span className="sm:hidden">📄 PDF</span>
