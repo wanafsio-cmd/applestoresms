@@ -141,7 +141,9 @@
 }
 
 .glass-sidebar {
-  background: linear-gradient(180deg, hsl(var(--sidebar-background)), hsl(222 47% 6%));
+  background: linear-gradient(180deg, hsl(232 40% 5%), hsl(232 50% 3%));
+  border-right: 1px solid hsl(186 100% 55% / 0.15);
+  box-shadow: inset -1px 0 0 hsl(186 100% 55% / 0.08), 0 0 40px hsl(186 100% 55% / 0.05);
   backdrop-filter: blur(40px) saturate(200%);
   -webkit-backdrop-filter: blur(40px) saturate(200%);
 }
