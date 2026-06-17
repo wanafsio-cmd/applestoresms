@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { safeExport } from "@/lib/safeExport";
 
 export function Reports() {
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -120,20 +121,28 @@ export function Reports() {
   });
 
   const handleExportExcel = () => {
-    const exportData = filteredSales?.map(sale => ({
-      Date: new Date(sale.created_at).toLocaleString(),
-      Customer: sale.customers?.name || "Walk-in",
-      "Payment Method": sale.payment_method,
-      "Total Amount": Number(sale.total_amount).toFixed(2),
-      Items: sale.sale_items?.length || 0,
-      Notes: sale.notes || "",
-    })) || [];
+    safeExport(
+      () => {
+        const exportData = filteredSales?.map(sale => ({
+          Date: new Date(sale.created_at).toLocaleString(),
+          Customer: sale.customers?.name || "Walk-in",
+          "Payment Method": sale.payment_method,
+          "Total Amount": Number(sale.total_amount).toFixed(2),
+          Items: sale.sale_items?.length || 0,
+          Notes: sale.notes || "",
+        })) || [];
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
-    XLSX.writeFile(wb, `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+        if (exportData.length === 0) throw new Error("কোনো ডেটা নেই");
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+        XLSX.writeFile(wb, `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      },
+      { successMessage: "Excel ডাউনলোড হয়েছে", errorPrefix: "Excel ডাউনলোড ব্যর্থ" }
+    );
   };
+
 
   const clearFilters = () => {
     setFilterDateFrom("");

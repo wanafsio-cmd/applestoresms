@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import defaultLogo from "@/assets/3926e988-d85b-4bf1-8f3e-71bdbe4a2e70.png";
 import { queryClient } from "@/lib/queryClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 const App = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -68,6 +69,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <OfflineBanner />
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />

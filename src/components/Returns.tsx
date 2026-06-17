@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { safeExport } from "@/lib/safeExport";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
 import { RotateCcw, Search, Package, Calendar, CheckCircle, XCircle, Clock, Trash2, FileSpreadsheet, FileText } from "lucide-react";
@@ -274,46 +275,50 @@ export function Returns() {
 
   const exportExcel = () => {
     if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
-    const rows = filteredReturns.map((r, i) => ({
-      'ক্রমিক': i + 1,
-      'রিটার্ন ID': r.id.slice(0, 8),
-      'বিক্রয় ID': r.sale_id.slice(0, 8),
-      'প্রোডাক্ট': r.products?.name || '',
-      'IMEI': r.products?.imei || '',
-      'ক্রেতা': r.sales?.customers?.name || 'সাধারণ',
-      'পরিমাণ': r.quantity,
-      'রিফান্ড (৳)': Number(r.refund_amount),
-      'কারণ': getReasonLabel(r.reason_code),
-      'স্ট্যাটাস': r.status,
-      'তারিখ': new Date(r.created_at).toLocaleDateString('bn-BD'),
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Returns');
-    XLSX.writeFile(wb, `Apple_Store_Returns_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success("Excel ডাউনলোড হয়েছে");
+    safeExport(() => {
+      const rows = filteredReturns.map((r, i) => ({
+        'ক্রমিক': i + 1,
+        'রিটার্ন ID': r.id.slice(0, 8),
+        'বিক্রয় ID': r.sale_id.slice(0, 8),
+        'প্রোডাক্ট': r.products?.name || '',
+        'IMEI': r.products?.imei || '',
+        'ক্রেতা': r.sales?.customers?.name || 'সাধারণ',
+        'পরিমাণ': r.quantity,
+        'রিফান্ড (৳)': Number(r.refund_amount),
+        'কারণ': getReasonLabel(r.reason_code),
+        'স্ট্যাটাস': r.status,
+        'তারিখ': new Date(r.created_at).toLocaleDateString('bn-BD'),
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Returns');
+      XLSX.writeFile(wb, `Apple_Store_Returns_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }, { successMessage: "Excel ডাউনলোড হয়েছে", errorPrefix: "Excel ডাউনলোড ব্যর্থ" });
   };
 
   const exportPDF = () => {
     if (filteredReturns.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
-    const w = window.open('', '_blank');
-    if (!w) { toast.error("পপআপ ব্লক"); return; }
-    const totalAmt = filteredReturns.reduce((s, r) => s + Number(r.refund_amount), 0);
-    w.document.write(`<html><head><title>Apple Store - Returns Report</title><style>
-      body{font-family:Arial;padding:20px;font-size:12px}
-      h1{text-align:center;color:#0066cc}.summary{background:#f5f5f5;padding:10px;margin:15px 0;border-radius:6px}
-      table{width:100%;border-collapse:collapse;margin-top:10px}
-      th,td{border:1px solid #ddd;padding:6px;text-align:left}
-      th{background:#0066cc;color:white}
-      tr:nth-child(even){background:#f9f9f9}
-    </style></head><body>
-      <h1>Apple Store - রিটার্ন রিপোর্ট</h1>
-      <div class="summary"><b>মোট রিটার্ন:</b> ${filteredReturns.length} | <b>মোট রিফান্ড:</b> ৳${totalAmt.toLocaleString('bn-BD')} | <b>তারিখ:</b> ${new Date().toLocaleDateString('bn-BD')}</div>
-      <table><thead><tr><th>#</th><th>প্রোডাক্ট</th><th>IMEI</th><th>ক্রেতা</th><th>পরিমাণ</th><th>রিফান্ড</th><th>কারণ</th><th>স্ট্যাটাস</th><th>তারিখ</th></tr></thead><tbody>
-      ${filteredReturns.map((r, i) => `<tr><td>${i+1}</td><td>${r.products?.name || ''}</td><td>${r.products?.imei || '-'}</td><td>${r.sales?.customers?.name || 'সাধারণ'}</td><td>${r.quantity}</td><td>৳${Number(r.refund_amount).toLocaleString('bn-BD')}</td><td>${getReasonLabel(r.reason_code)}</td><td>${r.status}</td><td>${new Date(r.created_at).toLocaleDateString('bn-BD')}</td></tr>`).join('')}
-      </tbody></table></body></html>`);
-    w.document.close(); w.focus(); setTimeout(() => { w.print(); }, 300);
+    safeExport(() => {
+      const w = window.open('', '_blank');
+      if (!w) throw new Error("পপআপ ব্লক করা আছে — অনুগ্রহ করে অনুমতি দিন");
+      const totalAmt = filteredReturns.reduce((s, r) => s + Number(r.refund_amount), 0);
+      w.document.write(`<html><head><title>Apple Store - Returns Report</title><style>
+        body{font-family:Arial;padding:20px;font-size:12px}
+        h1{text-align:center;color:#0066cc}.summary{background:#f5f5f5;padding:10px;margin:15px 0;border-radius:6px}
+        table{width:100%;border-collapse:collapse;margin-top:10px}
+        th,td{border:1px solid #ddd;padding:6px;text-align:left}
+        th{background:#0066cc;color:white}
+        tr:nth-child(even){background:#f9f9f9}
+      </style></head><body>
+        <h1>Apple Store - রিটার্ন রিপোর্ট</h1>
+        <div class="summary"><b>মোট রিটার্ন:</b> ${filteredReturns.length} | <b>মোট রিফান্ড:</b> ৳${totalAmt.toLocaleString('bn-BD')} | <b>তারিখ:</b> ${new Date().toLocaleDateString('bn-BD')}</div>
+        <table><thead><tr><th>#</th><th>প্রোডাক্ট</th><th>IMEI</th><th>ক্রেতা</th><th>পরিমাণ</th><th>রিফান্ড</th><th>কারণ</th><th>স্ট্যাটাস</th><th>তারিখ</th></tr></thead><tbody>
+        ${filteredReturns.map((r, i) => `<tr><td>${i+1}</td><td>${r.products?.name || ''}</td><td>${r.products?.imei || '-'}</td><td>${r.sales?.customers?.name || 'সাধারণ'}</td><td>${r.quantity}</td><td>৳${Number(r.refund_amount).toLocaleString('bn-BD')}</td><td>${getReasonLabel(r.reason_code)}</td><td>${r.status}</td><td>${new Date(r.created_at).toLocaleDateString('bn-BD')}</td></tr>`).join('')}
+        </tbody></table></body></html>`);
+      w.document.close(); w.focus(); setTimeout(() => { try { w.print(); } catch { /* ignore */ } }, 300);
+    }, { errorPrefix: "PDF ডাউনলোড ব্যর্থ" });
   };
+
 
   if (isLoading) {
     return (
