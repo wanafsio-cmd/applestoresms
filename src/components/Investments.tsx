@@ -229,66 +229,70 @@ export function Investments() {
 
   // Exports
   const exportExcel = () => {
-    const rows = [
-      ...filteredEntries.map(e => ({
-        ধরন: e.entry_type === 'deposit' ? 'জমা' : 'উত্তোলন',
-        খাত: (e as any).investment_sectors?.name,
-        পরিমাণ: Number(e.amount),
-        উদ্দেশ্য: e.purpose || '',
-        নোটস: e.notes || '',
-        তারিখ: e.entry_date,
-      })),
-      ...filteredIncomes.map(i => ({
-        ধরন: 'আয়',
-        খাত: (i as any).investment_sectors?.name,
-        পরিমাণ: Number(i.amount),
-        উদ্দেশ্য: i.purpose || i.source || '',
-        নোটস: i.notes || '',
-        তারিখ: i.income_date,
-      })),
-    ];
-    if (rows.length === 0) { toast.error("কোনো ডেটা নেই"); return; }
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Investments');
-    XLSX.writeFile(wb, `Apple_Store_Investments_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success("Excel ডাউনলোড");
+    safeExport(() => {
+      const rows = [
+        ...filteredEntries.map(e => ({
+          ধরন: e.entry_type === 'deposit' ? 'জমা' : 'উত্তোলন',
+          খাত: (e as any).investment_sectors?.name,
+          পরিমাণ: Number(e.amount),
+          উদ্দেশ্য: e.purpose || '',
+          নোটস: e.notes || '',
+          তারিখ: e.entry_date,
+        })),
+        ...filteredIncomes.map(i => ({
+          ধরন: 'আয়',
+          খাত: (i as any).investment_sectors?.name,
+          পরিমাণ: Number(i.amount),
+          উদ্দেশ্য: i.purpose || i.source || '',
+          নোটস: i.notes || '',
+          তারিখ: i.income_date,
+        })),
+      ];
+      if (rows.length === 0) throw new Error("কোনো ডেটা নেই");
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Investments');
+      XLSX.writeFile(wb, `Apple_Store_Investments_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }, { successMessage: "Excel ডাউনলোড হয়েছে", errorPrefix: "Excel ডাউনলোড ব্যর্থ" });
   };
 
   const exportPDF = () => {
-    const w = window.open('', '_blank');
-    if (!w) { toast.error("পপআপ ব্লক"); return; }
-    w.document.write(`<html><head><title>Apple Store - Investments Report</title><style>
-      body{font-family:Arial;padding:20px;font-size:12px}h1{text-align:center;color:#0066cc}
-      .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
-      .stat{background:#f5f5f5;padding:10px;border-radius:6px;text-align:center}
-      .stat .v{font-size:18px;font-weight:bold;color:#0066cc}
-      table{width:100%;border-collapse:collapse;margin-top:15px}
-      th,td{border:1px solid #ddd;padding:6px;text-align:left;font-size:11px}
-      th{background:#0066cc;color:white}h2{margin-top:20px;border-bottom:2px solid #0066cc;padding-bottom:5px}
-    </style></head><body>
-      <h1>Apple Store - ইনভেস্টমেন্ট রিপোর্ট</h1>
-      <p style="text-align:center">তারিখ: ${new Date().toLocaleDateString('bn-BD')}</p>
-      <div class="grid">
-        <div class="stat"><div>মোট বিনিয়োগ</div><div class="v">৳${grandInvestment.toLocaleString('bn-BD')}</div></div>
-        <div class="stat"><div>মোট আয়</div><div class="v">৳${grandIncome.toLocaleString('bn-BD')}</div></div>
-        <div class="stat"><div>লাভ/ক্ষতি</div><div class="v" style="color:${grandProfit>=0?'green':'red'}">৳${grandProfit.toLocaleString('bn-BD')}</div></div>
-      </div>
-      <h2>খাতওয়ারি সারাংশ</h2>
-      <table><thead><tr><th>খাত</th><th>জমা</th><th>উত্তোলন</th><th>নেট বিনিয়োগ</th><th>আয়</th><th>লাভ/ক্ষতি</th></tr></thead><tbody>
-      ${sectorStats.map(s => `<tr><td>${s.name}</td><td>৳${s.totalDeposit.toLocaleString('bn-BD')}</td><td>৳${s.totalWithdraw.toLocaleString('bn-BD')}</td><td>৳${s.netInvestment.toLocaleString('bn-BD')}</td><td>৳${s.totalIncome.toLocaleString('bn-BD')}</td><td style="color:${s.profit>=0?'green':'red'}">৳${s.profit.toLocaleString('bn-BD')}</td></tr>`).join('')}
-      </tbody></table>
-      <h2>ইনভেস্টমেন্ট এন্ট্রি (${filteredEntries.length})</h2>
-      <table><thead><tr><th>তারিখ</th><th>খাত</th><th>ধরন</th><th>পরিমাণ</th><th>উদ্দেশ্য</th></tr></thead><tbody>
-      ${filteredEntries.map(e => `<tr><td>${e.entry_date}</td><td>${(e as any).investment_sectors?.name || ''}</td><td>${e.entry_type === 'deposit' ? 'জমা' : 'উত্তোলন'}</td><td>৳${Number(e.amount).toLocaleString('bn-BD')}</td><td>${e.purpose || ''}</td></tr>`).join('')}
-      </tbody></table>
-      <h2>আয়ের তালিকা (${filteredIncomes.length})</h2>
-      <table><thead><tr><th>তারিখ</th><th>খাত</th><th>উৎস</th><th>পরিমাণ</th><th>উদ্দেশ্য</th></tr></thead><tbody>
-      ${filteredIncomes.map(i => `<tr><td>${i.income_date}</td><td>${(i as any).investment_sectors?.name || ''}</td><td>${i.source || ''}</td><td>৳${Number(i.amount).toLocaleString('bn-BD')}</td><td>${i.purpose || ''}</td></tr>`).join('')}
-      </tbody></table>
-    </body></html>`);
-    w.document.close(); w.focus(); setTimeout(() => w.print(), 300);
+    safeExport(() => {
+      const w = window.open('', '_blank');
+      if (!w) throw new Error("পপআপ ব্লক করা আছে — অনুগ্রহ করে অনুমতি দিন");
+      w.document.write(`<html><head><title>Apple Store - Investments Report</title><style>
+        body{font-family:Arial;padding:20px;font-size:12px}h1{text-align:center;color:#0066cc}
+        .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+        .stat{background:#f5f5f5;padding:10px;border-radius:6px;text-align:center}
+        .stat .v{font-size:18px;font-weight:bold;color:#0066cc}
+        table{width:100%;border-collapse:collapse;margin-top:15px}
+        th,td{border:1px solid #ddd;padding:6px;text-align:left;font-size:11px}
+        th{background:#0066cc;color:white}h2{margin-top:20px;border-bottom:2px solid #0066cc;padding-bottom:5px}
+      </style></head><body>
+        <h1>Apple Store - ইনভেস্টমেন্ট রিপোর্ট</h1>
+        <p style="text-align:center">তারিখ: ${new Date().toLocaleDateString('bn-BD')}</p>
+        <div class="grid">
+          <div class="stat"><div>মোট বিনিয়োগ</div><div class="v">৳${grandInvestment.toLocaleString('bn-BD')}</div></div>
+          <div class="stat"><div>মোট আয়</div><div class="v">৳${grandIncome.toLocaleString('bn-BD')}</div></div>
+          <div class="stat"><div>লাভ/ক্ষতি</div><div class="v" style="color:${grandProfit>=0?'green':'red'}">৳${grandProfit.toLocaleString('bn-BD')}</div></div>
+        </div>
+        <h2>খাতওয়ারি সারাংশ</h2>
+        <table><thead><tr><th>খাত</th><th>জমা</th><th>উত্তোলন</th><th>নেট বিনিয়োগ</th><th>আয়</th><th>লাভ/ক্ষতি</th></tr></thead><tbody>
+        ${sectorStats.map(s => `<tr><td>${s.name}</td><td>৳${s.totalDeposit.toLocaleString('bn-BD')}</td><td>৳${s.totalWithdraw.toLocaleString('bn-BD')}</td><td>৳${s.netInvestment.toLocaleString('bn-BD')}</td><td>৳${s.totalIncome.toLocaleString('bn-BD')}</td><td style="color:${s.profit>=0?'green':'red'}">৳${s.profit.toLocaleString('bn-BD')}</td></tr>`).join('')}
+        </tbody></table>
+        <h2>ইনভেস্টমেন্ট এন্ট্রি (${filteredEntries.length})</h2>
+        <table><thead><tr><th>তারিখ</th><th>খাত</th><th>ধরন</th><th>পরিমাণ</th><th>উদ্দেশ্য</th></tr></thead><tbody>
+        ${filteredEntries.map(e => `<tr><td>${e.entry_date}</td><td>${(e as any).investment_sectors?.name || ''}</td><td>${e.entry_type === 'deposit' ? 'জমা' : 'উত্তোলন'}</td><td>৳${Number(e.amount).toLocaleString('bn-BD')}</td><td>${e.purpose || ''}</td></tr>`).join('')}
+        </tbody></table>
+        <h2>আয়ের তালিকা (${filteredIncomes.length})</h2>
+        <table><thead><tr><th>তারিখ</th><th>খাত</th><th>উৎস</th><th>পরিমাণ</th><th>উদ্দেশ্য</th></tr></thead><tbody>
+        ${filteredIncomes.map(i => `<tr><td>${i.income_date}</td><td>${(i as any).investment_sectors?.name || ''}</td><td>${i.source || ''}</td><td>৳${Number(i.amount).toLocaleString('bn-BD')}</td><td>${i.purpose || ''}</td></tr>`).join('')}
+        </tbody></table>
+      </body></html>`);
+      w.document.close(); w.focus(); setTimeout(() => { try { w.print(); } catch { /* ignore */ } }, 300);
+    }, { errorPrefix: "PDF ডাউনলোড ব্যর্থ" });
   };
+
 
   return (
     <div className="space-y-6 animate-fade-in">
