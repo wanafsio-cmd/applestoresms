@@ -180,11 +180,26 @@
 
 @keyframes velvet-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 hsl(38 92% 50% / 0.3);
+    box-shadow: 0 0 0 0 hsl(186 100% 55% / 0.5);
   }
   50% {
-    box-shadow: 0 0 0 12px hsl(38 92% 50% / 0);
+    box-shadow: 0 0 0 14px hsl(305 100% 60% / 0);
   }
+}
+
+@keyframes neon-flicker {
+  0%, 100% { text-shadow: 0 0 8px hsl(186 100% 55% / 0.9), 0 0 24px hsl(186 100% 55% / 0.5); }
+  50% { text-shadow: 0 0 12px hsl(305 100% 60% / 0.9), 0 0 32px hsl(305 100% 60% / 0.6); }
+}
+
+.neon-text {
+  color: hsl(186 100% 70%);
+  animation: neon-flicker 3s ease-in-out infinite;
+}
+
+.neon-border {
+  border: 1px solid hsl(186 100% 55% / 0.4);
+  box-shadow: 0 0 12px hsl(186 100% 55% / 0.25), inset 0 0 12px hsl(186 100% 55% / 0.05);
 }
 
 @keyframes shimmer {
