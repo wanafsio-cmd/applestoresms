@@ -15,6 +15,7 @@ import { bn } from "date-fns/locale";
 import { RotateCcw, Search, Package, Calendar, CheckCircle, XCircle, Clock, Trash2, FileSpreadsheet, FileText } from "lucide-react";
 import * as XLSX from "xlsx";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 export function Returns() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
