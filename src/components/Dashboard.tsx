@@ -123,12 +123,15 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
   return (
     <div className="flex flex-col h-screen animate-fade-in">
        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50 pb-4">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold text-foreground">ড্যাশবোর্ড</h1>
             <p className="text-muted-foreground mt-1">স্বাগতম! আপনার ব্যবসার সারসংক্ষেপ দেখুন।</p>
           </div>
-          <img src={logoSrc} alt={settings.shop_name} className="w-20 h-20" />
+          <div className="flex items-center gap-3">
+            <CollapseGroupControls group="dashboard" />
+            <img src={logoSrc} alt={settings.shop_name} className="w-20 h-20" />
+          </div>
         </div>
       </div>
 
@@ -137,6 +140,7 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
           onNavigateToPOS={onNavigateToPOS}
           onNavigateToProducts={onNavigateToProducts}
         />
+        <CollapsibleSection group="dashboard" title="📊 মূল পরিসংখ্যান" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <Card key={index} className="p-6 card-hover border-border bg-card">
