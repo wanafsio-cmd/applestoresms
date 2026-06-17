@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
+import { toUserMessage } from "@/lib/errors";
 
 interface DueCollectionProps {
   saleId: string;
@@ -37,32 +38,20 @@ export function DueCollection({ saleId, currentDue }: DueCollectionProps) {
   const collectMutation = useMutation({
     mutationFn: async () => {
       const collectAmount = Number(amount);
-      if (collectAmount <= 0 || collectAmount > currentDue) {
-        throw new Error("অবৈধ পরিমাণ");
+      if (!Number.isFinite(collectAmount) || collectAmount <= 0) {
+        throw new Error("সঠিক পরিমাণ লিখুন");
+      }
+      if (collectAmount > currentDue) {
+        throw new Error(`বাকির চেয়ে বেশি (৳${currentDue}) আদায় করা যাবে না`);
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Insert payment record
-      const { error: paymentError } = await supabase.from("due_payments").insert({
-        sale_id: saleId,
-        amount: collectAmount,
-        payment_method: paymentMethod,
-        notes: notes || null,
-        collected_by: user?.id,
+      const { error } = await supabase.rpc("collect_due", {
+        p_sale_id: saleId,
+        p_amount: collectAmount,
+        p_method: paymentMethod,
+        p_notes: notes || null,
       });
-      if (paymentError) throw paymentError;
-
-      // Update sale due_amount and paid_amount
-      const newDue = currentDue - collectAmount;
-      const { data: sale } = await supabase.from("sales").select("paid_amount").eq("id", saleId).single();
-      const newPaid = Number(sale?.paid_amount || 0) + collectAmount;
-
-      const { error: updateError } = await supabase
-        .from("sales")
-        .update({ due_amount: newDue, paid_amount: newPaid })
-        .eq("id", saleId);
-      if (updateError) throw updateError;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
@@ -71,7 +60,7 @@ export function DueCollection({ saleId, currentDue }: DueCollectionProps) {
       setAmount("");
       setNotes("");
     },
-    onError: (err: any) => toast.error(err.message || "বাকি আদায় ব্যর্থ"),
+    onError: (err: unknown) => toast.error(toUserMessage(err, "বাকি আদায় ব্যর্থ")),
   });
 
   if (currentDue <= 0) return null;
