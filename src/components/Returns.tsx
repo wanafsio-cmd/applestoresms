@@ -534,7 +534,7 @@ export function Returns() {
         </div>
 
         {/* Filter & Export */}
-        <Card className="p-4">
+        <CollapsibleSection title="🔍 সার্চ, ফিল্টার ও এক্সপোর্ট" defaultOpen={true}>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -564,7 +564,7 @@ export function Returns() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">দেখানো হচ্ছে: {filteredReturns.length}টি</p>
-        </Card>
+        </CollapsibleSection>
       </div>
 
       {/* Scrollable Content */}
