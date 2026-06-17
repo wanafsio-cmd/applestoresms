@@ -44,7 +44,7 @@ export function Customers() {
 
   const addMutation = useSafeMutation({
     mutationFn: async (data: CustomerFormValues) => {
-      const { error } = await supabase.from("customers").insert([data]);
+      const { error } = await supabase.from("customers").insert([data as any]);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -57,7 +57,7 @@ export function Customers() {
 
   const updateMutation = useSafeMutation({
     mutationFn: async ({ id, data }: { id: string; data: CustomerFormValues }) => {
-      const { error } = await supabase.from("customers").update(data).eq("id", id);
+      const { error } = await supabase.from("customers").update(data as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
