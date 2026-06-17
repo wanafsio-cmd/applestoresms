@@ -20,6 +20,7 @@ import { validateOrToast } from "@/lib/validateForm";
 import { exportProductsToExcel, exportProductsToPDF } from "@/lib/exports/productsExport";
 import { qk } from "@/lib/queryKeys";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 export function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
