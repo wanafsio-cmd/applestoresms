@@ -55,6 +55,15 @@ export function Sales() {
   const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ group: string; open: boolean }>;
+      if (ce.detail?.group === "sales") setShowFilters(ce.detail.open);
+    };
+    window.addEventListener("lovable:collapse-group", handler);
+    return () => window.removeEventListener("lovable:collapse-group", handler);
+  }, []);
   const itemsPerPage = 10;
   const printRef = useRef<HTMLDivElement>(null);
 
