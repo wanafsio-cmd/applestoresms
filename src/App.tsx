@@ -54,9 +54,9 @@ const App = () => {
       <div className="flex min-h-screen items-center justify-center bg-primary">
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 animate-pulse shadow-xl">
-            <img src={defaultLogo} alt="Apple Store" className="w-28 h-28 animate-scale-in" />
+            <img src={defaultLogo} alt="MOBILE GALARY" className="w-28 h-28 animate-scale-in" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Apple Store</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">MOBILE GALARY</h2>
           <p className="text-white/70">Loading...</p>
         </div>
       </div>

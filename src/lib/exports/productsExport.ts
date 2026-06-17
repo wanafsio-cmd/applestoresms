@@ -78,7 +78,7 @@ export function exportProductsToPDF(products: ProductRow[] | undefined | null) {
     const outOfStock = products.filter((p) => (Number(p.stock_quantity) || 0) <= 0).length;
 
     const printContent = `<!DOCTYPE html><html><head>
-<title>Apple Store - প্রোডাক্ট তালিকা</title>
+<title>MOBILE GALARY - প্রোডাক্ট তালিকা</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; font-size: 11px; }
@@ -100,7 +100,7 @@ tr:nth-child(even) { background: #f9f9f9; }
 @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
 </style></head><body>
 <div class="header">
-  <h1>👑 Apple Store</h1>
+  <h1>👑 MOBILE GALARY</h1>
   <p>প্রোডাক্ট ইনভেন্টরি তালিকা</p>
   <p style="font-size: 10px; margin-top: 5px;">তারিখ: ${new Date().toLocaleDateString("bn-BD")}</p>
 </div>
@@ -132,7 +132,7 @@ ${products
   .join("")}
 </tbody></table>
 <div class="footer">
-  <p>Apple Store - Sales & Stock Management System</p>
+  <p>MOBILE GALARY - Sales & Stock Management System</p>
   <p>Generated on ${new Date().toLocaleString("bn-BD")}</p>
 </div>
 </body></html>`;

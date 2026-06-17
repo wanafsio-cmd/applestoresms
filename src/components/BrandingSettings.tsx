@@ -33,7 +33,7 @@ export function BrandingSettings() {
         const { data, error } = await supabase
           .from("shop_settings")
           .insert({
-            shop_name: "Apple Store",
+            shop_name: "MOBILE GALARY",
             shop_subtitle: "Sales & Stock Management System",
           })
           .select()
@@ -223,7 +223,7 @@ export function BrandingSettings() {
             <label className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
               <Type className="w-4 h-4 text-accent" /> দোকানের নাম
             </label>
-            <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="Apple Store" className="mt-1" />
+            <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="MOBILE GALARY" className="mt-1" />
           </div>
           <div>
             <label className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
