@@ -16,7 +16,7 @@ export function Reports() {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("all");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  
   const printRef = useRef<HTMLDivElement>(null);
   const { data: sales } = useQuery({
     queryKey: ["sales"],
