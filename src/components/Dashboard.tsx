@@ -156,6 +156,7 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
           </Card>
         ))}
         </div>
+        </CollapsibleSection>
 
       {outOfStockProducts > 0 && (
         <Card className="p-6 border-red-200 bg-red-50 dark:bg-red-950/20">
