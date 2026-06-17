@@ -26,7 +26,6 @@ export function BrandingSettings() {
   // Initialize form values and ensure a settings row exists
   useEffect(() => {
     const initSettings = async () => {
-    const initSettings = async () => {
       if (settings && settings.id) {
         setSettingsId(settings.id);
         setShopName(settings.shop_name || "");
