@@ -14,7 +14,7 @@ export interface ShopSettings {
 
 const DEFAULT_SETTINGS: ShopSettings = {
   id: "",
-  shop_name: "Apple Store",
+  shop_name: "MOBILE GALARY",
   shop_subtitle: "Sales & Stock Management System",
   shop_address: "Goli No-6, Shop No-13, New Market, Karanihat, Satkania, Chittagong",
   shop_phone: "",
