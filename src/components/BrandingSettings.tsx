@@ -13,6 +13,10 @@ export function BrandingSettings() {
   const [shopSubtitle, setShopSubtitle] = useState("");
   const [shopAddress, setShopAddress] = useState("");
   const [shopPhone, setShopPhone] = useState("");
+  const [accentColor, setAccentColor] = useState("#22e6ff");
+  const [accentColor2, setAccentColor2] = useState("#ff3df0");
+  const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
+  const [contrastLevel, setContrastLevel] = useState<number>(100);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
