@@ -235,7 +235,8 @@ export function Sales() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Sales History</h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">View and manage all sales transactions</p>
           </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <CollapseGroupControls group="sales" />
           <Button
             onClick={handlePrint}
             variant="outline"
