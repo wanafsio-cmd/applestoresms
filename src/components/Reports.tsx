@@ -9,6 +9,7 @@ import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 export function Reports() {
   const [filterDateFrom, setFilterDateFrom] = useState("");
