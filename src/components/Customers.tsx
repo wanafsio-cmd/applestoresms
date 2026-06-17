@@ -118,11 +118,7 @@ export function Customers() {
                   ➕ Add Customer
                 </Button>
               </DialogTrigger>
-              <Button onClick={() => setIsAddDialogOpen(true)} className="bg-gradient-to-r from-primary to-accent">
-                ➕ Add Customer
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
+              <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editingCustomer ? "Edit Customer" : "Add New Customer"}</DialogTitle>
               </DialogHeader>
