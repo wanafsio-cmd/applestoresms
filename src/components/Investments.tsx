@@ -306,7 +306,8 @@ export function Investments() {
           </h1>
           <p className="text-sm text-muted-foreground">খাতওয়ারি বিনিয়োগ, উত্তোলন ও আয়ের সম্পূর্ণ হিসাব</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          <CollapseGroupControls group="investments" />
           <Button size="sm" variant="outline" onClick={exportExcel} className="border-green-500 text-green-600">
             <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
           </Button>
