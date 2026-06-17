@@ -13,7 +13,6 @@ import { Search, Calendar, User, CreditCard, Package, Filter, X, FileDown, FileS
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
-import * as XLSX from "xlsx";
 import { DueCollection } from "./DueCollection";
 
 interface SaleDetail {
