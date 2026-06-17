@@ -157,8 +157,10 @@ export function Customers() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
+
 
       <div className="flex-1 overflow-y-auto pb-6 space-y-4">
         <CollapsibleSection
