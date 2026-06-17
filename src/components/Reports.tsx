@@ -388,8 +388,7 @@ export function Reports() {
         </div>
       </CollapsibleSection>
 
-      <Card className="p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">Top Selling Products</h2>
+      <CollapsibleSection title="Top Selling Products" defaultOpen={true}>
         <div className="space-y-4">
           {topProducts.map((product, index) => (
             <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -404,64 +403,63 @@ export function Reports() {
             <p className="text-center text-muted-foreground py-8">No sales data available yet</p>
           )}
         </div>
-        </Card>
+      </CollapsibleSection>
 
-        <div ref={printRef}>
-          <Card className="p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">Recent Sales</h2>
+      <div ref={printRef}>
+        <CollapsibleSection title="Recent Sales" defaultOpen={true}>
           <div className="space-y-4">
             {filteredSales?.slice(0, 10).map((sale) => (
-            <Card key={sale.id} className="p-4 hover:bg-muted/50">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-semibold text-foreground">
-                    {sale.customers?.name || "Walk-in Customer"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(sale.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-primary">
-                    ${Number(sale.total_amount).toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {sale.payment_method}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Items:</p>
-                {sale.sale_items?.map((item: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center text-sm bg-muted/30 p-2 rounded">
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{item.products?.name || "Product"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
-                        {item.condition && <span className="ml-2">• {item.condition}</span>}
-                      </p>
-                    </div>
+              <Card key={sale.id} className="p-4 hover:bg-muted/50">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
                     <p className="font-semibold text-foreground">
-                      ${Number(item.total_price).toFixed(2)}
+                      {sale.customers?.name || "Walk-in Customer"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(sale.created_at).toLocaleString()}
                     </p>
                   </div>
-                ))}
-              </div>
-              {sale.notes && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Note:</span> {sale.notes}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-primary">
+                      ${Number(sale.total_amount).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {sale.payment_method}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </Card>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Items:</p>
+                  {sale.sale_items?.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center text-sm bg-muted/30 p-2 rounded">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{item.products?.name || "Product"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                          {item.condition && <span className="ml-2">• {item.condition}</span>}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        ${Number(item.total_price).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {sale.notes && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Note:</span> {sale.notes}
+                    </p>
+                  </div>
+                )}
+              </Card>
             ))}
             {(!filteredSales || filteredSales.length === 0) && (
               <p className="text-center text-muted-foreground py-8">No sales data available with current filters</p>
             )}
           </div>
-        </Card>
-        </div>
+        </CollapsibleSection>
+      </div>
       </div>
     </div>
   );
