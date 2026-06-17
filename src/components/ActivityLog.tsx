@@ -276,55 +276,57 @@ export function ActivityLog() {
 
         <TabsContent value="logs">
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="অ্যাকশন বা ইউজার খুঁজুন..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+          <CollapsibleSection title="🔍 সার্চ ও ফিল্টার" defaultOpen={true} className="mb-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="অ্যাকশন বা ইউজার খুঁজুন..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={filterUser} onValueChange={setFilterUser}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="ব্যবহারকারী" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সকল ব্যবহারকারী</SelectItem>
+                  {uniqueUsers.map(email => (
+                    <SelectItem key={email} value={email}>{email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="ধরন" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">সকল অ্যাকশন</SelectItem>
+                  <SelectItem value="auth">লগইন/লগআউট</SelectItem>
+                  <SelectItem value="sale">বিক্রয়</SelectItem>
+                  <SelectItem value="product">প্রোডাক্ট</SelectItem>
+                  <SelectItem value="customer">কাস্টমার</SelectItem>
+                  <SelectItem value="supplier">সাপ্লায়ার</SelectItem>
+                  <SelectItem value="category">ক্যাটাগরি</SelectItem>
+                  <SelectItem value="settings">সেটিংস</SelectItem>
+                  <SelectItem value="user_management">ইউজার ম্যানেজমেন্ট</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="সময়কাল" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">আজ</SelectItem>
+                  <SelectItem value="7">৭ দিন</SelectItem>
+                  <SelectItem value="30">৩০ দিন</SelectItem>
+                  <SelectItem value="90">৯০ দিন</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={filterUser} onValueChange={setFilterUser}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="ব্যবহারকারী" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">সকল ব্যবহারকারী</SelectItem>
-                {uniqueUsers.map(email => (
-                  <SelectItem key={email} value={email}>{email}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="ধরন" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">সকল অ্যাকশন</SelectItem>
-                <SelectItem value="auth">লগইন/লগআউট</SelectItem>
-                <SelectItem value="sale">বিক্রয়</SelectItem>
-                <SelectItem value="product">প্রোডাক্ট</SelectItem>
-                <SelectItem value="customer">কাস্টমার</SelectItem>
-                <SelectItem value="supplier">সাপ্লায়ার</SelectItem>
-                <SelectItem value="category">ক্যাটাগরি</SelectItem>
-                <SelectItem value="settings">সেটিংস</SelectItem>
-                <SelectItem value="user_management">ইউজার ম্যানেজমেন্ট</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-full sm:w-32">
-                <SelectValue placeholder="সময়কাল" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">আজ</SelectItem>
-                <SelectItem value="7">৭ দিন</SelectItem>
-                <SelectItem value="30">৩০ দিন</SelectItem>
-                <SelectItem value="90">৯০ দিন</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          </CollapsibleSection>
 
           {/* Logs Table */}
           {isLoading ? (
