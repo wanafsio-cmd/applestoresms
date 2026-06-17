@@ -334,7 +334,7 @@ export function Reports() {
       </CollapsibleSection>
 
       {/* 360 Degree Report - New vs Used Mobiles */}
-      <CollapsibleSection title="Product Condition Analysis" defaultOpen={true}>
+      <CollapsibleSection group="reports" title="Product Condition Analysis" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* New Products Section */}
           <div className="space-y-3 md:space-y-4">
@@ -390,7 +390,7 @@ export function Reports() {
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Top Selling Products" defaultOpen={true}>
+      <CollapsibleSection group="reports" title="Top Selling Products" defaultOpen={true}>
         <div className="space-y-4">
           {topProducts.map((product, index) => (
             <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -408,7 +408,7 @@ export function Reports() {
       </CollapsibleSection>
 
       <div ref={printRef}>
-        <CollapsibleSection title="Recent Sales" defaultOpen={true}>
+        <CollapsibleSection group="reports" title="Recent Sales" defaultOpen={true}>
           <div className="space-y-4">
             {filteredSales?.slice(0, 10).map((sale) => (
               <Card key={sale.id} className="p-4 hover:bg-muted/50">
