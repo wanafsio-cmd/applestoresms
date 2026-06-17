@@ -105,13 +105,19 @@ export function Customers() {
   return (
     <div className="flex flex-col h-screen animate-fade-in">
       <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-border pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Customers</h1>
             <p className="text-muted-foreground mt-1">Manage your customer database</p>
           </div>
-          <Dialog open={isAddDialogOpen || !!editingCustomer} onOpenChange={(open) => { if (!open) closeDialog(); }}>
-            <DialogTrigger asChild>
+          <div className="flex flex-wrap gap-2 items-center">
+            <CollapseGroupControls group="customers" />
+            <Dialog open={isAddDialogOpen || !!editingCustomer} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="bg-gradient-to-r from-primary to-accent">
+                  ➕ Add Customer
+                </Button>
+              </DialogTrigger>
               <Button onClick={() => setIsAddDialogOpen(true)} className="bg-gradient-to-r from-primary to-accent">
                 ➕ Add Customer
               </Button>
