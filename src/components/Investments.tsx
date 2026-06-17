@@ -13,6 +13,9 @@ import { TrendingUp, Wallet, PiggyBank, ArrowDownCircle, ArrowUpCircle, Trash2, 
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
 import * as XLSX from "xlsx";
+import { toUserMessage } from "@/lib/errors";
+import { investmentEntrySchema } from "@/lib/validation";
+import { validateOrToast } from "@/lib/validateForm";
 
 export function Investments() {
   const qc = useQueryClient();
@@ -60,6 +63,7 @@ export function Investments() {
   // Sector CRUD
   const saveSector = useMutation({
     mutationFn: async () => {
+      if (!sectorForm.name.trim()) throw new Error("খাতের নাম দিন");
       if (editingSector) {
         const { error } = await supabase.from("investment_sectors").update(sectorForm).eq("id", editingSector.id);
         if (error) throw error;
@@ -73,7 +77,7 @@ export function Investments() {
       toast.success(editingSector ? "খাত আপডেট হয়েছে" : "খাত যোগ হয়েছে");
       setShowSector(false); setEditingSector(null); setSectorForm({ name: "", description: "" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "খাত সংরক্ষণ ব্যর্থ")),
   });
 
   const deleteSector = useMutation({
