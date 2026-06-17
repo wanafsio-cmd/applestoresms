@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { customerSchema } from "@/lib/validation";
 import { useSafeMutation } from "@/hooks/useSafeMutation";
 import { qk } from "@/lib/queryKeys";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 type CustomerFormValues = z.infer<typeof customerSchema> & { notes?: string };
 
