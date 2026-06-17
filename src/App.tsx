@@ -51,13 +51,13 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-primary">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 animate-pulse shadow-xl">
+          <div className="inline-flex items-center justify-center w-32 h-32 rounded-2xl mb-4 animate-pulse-glow neon-border">
             <img src={defaultLogo} alt="MOBILE GALARY" className="w-28 h-28 animate-scale-in" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">MOBILE GALARY</h2>
-          <p className="text-white/70">Loading...</p>
+          <h2 className="text-3xl font-display font-bold mb-2 neon-text tracking-widest">MOBILE GALARY</h2>
+          <p className="text-muted-foreground font-mono text-sm">// initializing...</p>
         </div>
       </div>
     );
