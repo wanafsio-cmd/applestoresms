@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { safeExport } from "@/lib/safeExport";
 
 export function Reports() {
   const [filterDateFrom, setFilterDateFrom] = useState("");

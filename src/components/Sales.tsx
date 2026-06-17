@@ -12,6 +12,8 @@ import { format } from "date-fns";
 import { Search, Calendar, User, CreditCard, Package, Filter, X, FileDown, FileSpreadsheet } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { safeExport } from "@/lib/safeExport";
+import * as XLSX from "xlsx";
 import { DueCollection } from "./DueCollection";
 
 interface SaleDetail {
