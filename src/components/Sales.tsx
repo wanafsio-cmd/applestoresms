@@ -14,6 +14,7 @@ import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
 import { DueCollection } from "./DueCollection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 interface SaleDetail {
   id: string;
