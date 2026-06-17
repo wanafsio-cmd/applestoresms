@@ -9,6 +9,7 @@ import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 export function Reports() {
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -161,7 +162,8 @@ export function Reports() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reports & Analytics</h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">Track your business performance</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <CollapseGroupControls group="reports" />
             <Button onClick={handlePrint} variant="outline" className="text-sm md:text-base">
               <span className="hidden sm:inline">📄 Export PDF</span>
               <span className="sm:hidden">📄 PDF</span>
@@ -264,6 +266,7 @@ export function Reports() {
 
       {/* Investment Analysis Section */}
       <CollapsibleSection
+        group="reports"
         title={<><span className="mr-2">💰</span>Total Investment Analysis</>}
         defaultOpen={true}
         className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200"
@@ -332,7 +335,7 @@ export function Reports() {
       </CollapsibleSection>
 
       {/* 360 Degree Report - New vs Used Mobiles */}
-      <CollapsibleSection title="Product Condition Analysis" defaultOpen={true}>
+      <CollapsibleSection group="reports" title="Product Condition Analysis" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* New Products Section */}
           <div className="space-y-3 md:space-y-4">
@@ -388,7 +391,7 @@ export function Reports() {
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Top Selling Products" defaultOpen={true}>
+      <CollapsibleSection group="reports" title="Top Selling Products" defaultOpen={true}>
         <div className="space-y-4">
           {topProducts.map((product, index) => (
             <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -406,7 +409,7 @@ export function Reports() {
       </CollapsibleSection>
 
       <div ref={printRef}>
-        <CollapsibleSection title="Recent Sales" defaultOpen={true}>
+        <CollapsibleSection group="reports" title="Recent Sales" defaultOpen={true}>
           <div className="space-y-4">
             {filteredSales?.slice(0, 10).map((sale) => (
               <Card key={sale.id} className="p-4 hover:bg-muted/50">

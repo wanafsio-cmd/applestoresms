@@ -535,7 +535,7 @@ export function Returns() {
         </div>
 
         {/* Filter & Export */}
-        <CollapsibleSection title="🔍 সার্চ, ফিল্টার ও এক্সপোর্ট" defaultOpen={true}>
+        <CollapsibleSection group="returns" title="🔍 সার্চ, ফিল্টার ও এক্সপোর্ট" defaultOpen={true}>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

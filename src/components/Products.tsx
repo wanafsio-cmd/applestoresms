@@ -681,7 +681,7 @@ export function Products() {
         </div>
 
       {/* Search and Filters */}
-      <CollapsibleSection title="🔍 সার্চ ও ফিল্টার" defaultOpen={true}>
+      <CollapsibleSection group="products" title="🔍 সার্চ ও ফিল্টার" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2 flex gap-2">
             <Input
