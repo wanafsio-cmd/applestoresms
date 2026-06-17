@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { InvoiceModal } from "./InvoiceModal";
 import { BarcodeScanner } from "./BarcodeScanner";
 import { ActivityLogger } from "@/hooks/useActivityLog";
+import { toUserMessage } from "@/lib/errors";
+import { saleSchema } from "@/lib/validation";
 
 // Sub-components
 import { CartItem, Product, Customer } from "./pos/types";
@@ -52,81 +54,38 @@ export function POS() {
 
   const completeSaleMutation = useMutation({
     mutationFn: async (saleData: any) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: sale, error: saleError } = await supabase
-        .from("sales")
-        .insert([{
-          user_id: user.id,
-          customer_id: saleData.customer_id,
-          total_amount: saleData.total_amount,
-          payment_method: saleData.payment_method,
-          status: "completed",
-          instant_customer_name: saleData.instant_customer_name,
-          instant_customer_phone: saleData.instant_customer_phone,
-          paid_amount: saleData.paid_amount,
-          due_amount: saleData.due_amount,
-        }])
-        .select("*, customers(*)")
-        .single();
-
-      if (saleError) throw saleError;
-
-      for (const item of saleData.items) {
-        const { error: itemError } = await supabase
-          .from("sale_items")
-          .insert([{
-            sale_id: sale.id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.total_price,
-          }]);
-
-        if (itemError) throw itemError;
-
-        const { data: product, error: productFetchError } = await supabase
-          .from("products")
-          .select("stock_quantity")
-          .eq("id", item.product_id)
-          .single();
-
-        if (productFetchError) {
-          console.error("Failed to fetch product for stock update:", productFetchError);
-          throw new Error(`স্টক আপডেট করতে ব্যর্থ: ${item.product_id}`);
-        }
-
-        if (product) {
-          const newStockQuantity = Math.max(0, product.stock_quantity - item.quantity);
-          const { error: stockUpdateError } = await supabase
-            .from("products")
-            .update({ stock_quantity: newStockQuantity })
-            .eq("id", item.product_id);
-
-          if (stockUpdateError) {
-            console.error("Failed to update stock:", stockUpdateError);
-            throw new Error(`স্টক আপডেট করতে ব্যর্থ: ${item.product_id}`);
-          }
-        }
+      // Client-side validation
+      const parsed = saleSchema.safeParse(saleData);
+      if (!parsed.success) {
+        throw new Error(parsed.error.errors[0]?.message || "অবৈধ বিক্রয় ডাটা");
       }
 
-      const { data: fullSale } = await supabase
+      // Atomic server-side sale completion (sale + items + stock decrement)
+      const { data: rpcResult, error: rpcError } = await supabase.rpc("complete_sale", {
+        payload: saleData as any,
+      });
+      if (rpcError) throw rpcError;
+
+      const saleId = (rpcResult as any)?.sale_id;
+      if (!saleId) throw new Error("বিক্রয় তৈরি করা যায়নি");
+
+      const { data: fullSale, error: fetchError } = await supabase
         .from("sales")
         .select("*, customers(*), sale_items(*, products(*))")
-        .eq("id", sale.id)
+        .eq("id", saleId)
         .single();
 
+      if (fetchError) throw fetchError;
       return fullSale;
     },
     onSuccess: (sale) => {
       queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("বিক্রয় সফলভাবে সম্পন্ন হয়েছে!");
-      
+
       const itemCount = sale?.sale_items?.length || cart.length;
       ActivityLogger.saleCreated(sale?.id, sale?.total_amount, itemCount);
-      
+
       setLastSale(sale);
       setShowInvoice(true);
       setCart([]);
@@ -136,8 +95,8 @@ export function POS() {
       setInstantCustomerPhone("");
       setPaidAmount(0);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "বিক্রয় সম্পন্ন করতে ব্যর্থ");
+    onError: (error: unknown) => {
+      toast.error(toUserMessage(error, "বিক্রয় সম্পন্ন করতে ব্যর্থ"));
     },
   });
 
