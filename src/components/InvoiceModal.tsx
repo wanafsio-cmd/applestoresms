@@ -52,7 +52,7 @@ export function InvoiceModal({ isOpen, sale, onClose }: InvoiceModalProps) {
         <div ref={componentRef} className="p-8">
           {/* Company Header */}
           <div className="text-center mb-8 border-b pb-4">
-            <h1 className="text-3xl font-bold text-primary mb-2">👑 {settings.shop_name}</h1>
+            <h1 className="text-3xl font-bold text-primary mb-2">📱 {settings.shop_name}</h1>
             <p className="text-sm text-muted-foreground">{settings.shop_subtitle || "Sales & Stock Management System"}</p>
             <p className="text-xs text-muted-foreground mt-1">ঠিকানা: {settings.shop_address || "আপনার দোকানের ঠিকানা"}</p>
             {settings.shop_phone && <p className="text-xs text-muted-foreground">ফোন: {settings.shop_phone}</p>}

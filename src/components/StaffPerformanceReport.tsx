@@ -413,7 +413,7 @@ export function StaffPerformanceReport() {
             <div className="flex items-center gap-3">
               <img src={shopLogo} alt="MOBILE GALARY" className="w-16 h-16" />
               <div>
-                <h1 className="text-2xl font-bold">👑 MOBILE GALARY</h1>
+                <h1 className="text-2xl font-bold">📱 MOBILE GALARY</h1>
                 <p className="text-gray-600">স্টাফ পারফরম্যান্স রিপোর্ট</p>
               </div>
             </div>

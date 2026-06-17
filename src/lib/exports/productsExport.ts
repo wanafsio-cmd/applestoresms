@@ -100,7 +100,7 @@ tr:nth-child(even) { background: #f9f9f9; }
 @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
 </style></head><body>
 <div class="header">
-  <h1>👑 MOBILE GALARY</h1>
+  <h1>📱 MOBILE GALARY</h1>
   <p>প্রোডাক্ট ইনভেন্টরি তালিকা</p>
   <p style="font-size: 10px; margin-top: 5px;">তারিখ: ${new Date().toLocaleDateString("bn-BD")}</p>
 </div>
