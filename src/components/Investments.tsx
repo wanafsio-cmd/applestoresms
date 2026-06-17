@@ -448,7 +448,7 @@ export function Investments() {
       </div>
 
       {/* Filters */}
-      <CollapsibleSection title="🔍 ফিল্টার" defaultOpen={true}>
+      <CollapsibleSection group="investments" title="🔍 ফিল্টার" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Select value={filterSector} onValueChange={setFilterSector}>
             <SelectTrigger><SelectValue /></SelectTrigger>
