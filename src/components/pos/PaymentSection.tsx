@@ -43,9 +43,10 @@ export function PaymentSection({
 
   const dueAmount = Math.max(0, total - paidAmount);
 
-  // Auto-set paid amount to total when total changes
+  // Auto-init paid amount to total only when user hasn't entered a partial amount,
+  // or clamp it down if cart shrank below the previously entered amount.
   useEffect(() => {
-    onPaidAmountChange(total);
+    if (paidAmount === 0 || paidAmount > total) onPaidAmountChange(total);
   }, [total]);
 
   return (
