@@ -258,10 +258,13 @@ export function ActivityLog() {
           <Activity className="w-6 h-6 text-primary" />
           <h2 className="text-xl font-semibold text-foreground">📋 অ্যাক্টিভিটি লগ</h2>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          রিফ্রেশ
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <CollapseGroupControls group="activity" />
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            রিফ্রেশ
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
