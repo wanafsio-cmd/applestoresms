@@ -16,7 +16,7 @@ export function Reports() {
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("all");
   const [filterPaymentMethod, setFilterPaymentMethod] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  
   const printRef = useRef<HTMLDivElement>(null);
   const { data: sales } = useQuery({
     queryKey: ["sales"],
@@ -175,94 +175,93 @@ export function Reports() {
           </div>
         </div>
 
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 text-left"
-            >
-              <h2 className="text-base md:text-lg font-semibold text-foreground">Filter Sales</h2>
-              <span className="text-sm text-muted-foreground ml-2">
-                {showFilters ? "▼" : "▶"}
-              </span>
-            </button>
-          </div>
-          {showFilters && (
-          <>
+        <CollapsibleSection
+          group="reports"
+          title="Filter Sales"
+          icon={<span aria-hidden="true">🔍</span>}
+          defaultOpen={false}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">From Date</label>
-            <Input
-              type="date"
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-            />
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">From Date</label>
+              <Input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">To Date</label>
+              <Input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">Customer</label>
+              <Select value={filterCustomer} onValueChange={setFilterCustomer}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Customers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  {customers?.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-foreground">Payment Method</label>
+              <Select value={filterPaymentMethod} onValueChange={setFilterPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Methods" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="mobile">Mobile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">To Date</label>
-            <Input
-              type="date"
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">Customer</label>
-            <Select value={filterCustomer} onValueChange={setFilterCustomer}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Customers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Customers</SelectItem>
-                {customers?.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">Payment Method</label>
-            <Select value={filterPaymentMethod} onValueChange={setFilterPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Methods" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Methods</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="mobile">Mobile</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
           <div className="mt-4">
             <Button onClick={clearFilters} variant="ghost" size="sm">
               Clear Filters
             </Button>
           </div>
-          </>
-          )}
-        </Card>
+        </CollapsibleSection>
       </div>
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto pb-6 space-y-4 md:space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <Card className="p-4 md:p-6">
-            <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
-          <p className="text-2xl md:text-3xl font-bold text-primary">${totalRevenue.toFixed(2)}</p>
-        </Card>
-        <Card className="p-4 md:p-6">
-          <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Sales</h3>
-          <p className="text-2xl md:text-3xl font-bold text-accent">{totalSales}</p>
-        </Card>
-        <Card className="p-4 md:p-6">
-          <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Average Sale</h3>
-          <p className="text-2xl md:text-3xl font-bold text-foreground">${averageSale.toFixed(2)}</p>
-        </Card>
-        </div>
+        <CollapsibleSection
+          group="reports"
+          title="Summary"
+          icon={<span aria-hidden="true">📊</span>}
+          defaultOpen={true}
+          asCard={false}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <Card className="p-4 md:p-6">
+              <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
+              <p className="text-2xl md:text-3xl font-bold text-primary">${totalRevenue.toFixed(2)}</p>
+            </Card>
+            <Card className="p-4 md:p-6">
+              <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Sales</h3>
+              <p className="text-2xl md:text-3xl font-bold text-accent">{totalSales}</p>
+            </Card>
+            <Card className="p-4 md:p-6">
+              <h3 className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Average Sale</h3>
+              <p className="text-2xl md:text-3xl font-bold text-foreground">${averageSale.toFixed(2)}</p>
+            </Card>
+          </div>
+        </CollapsibleSection>
+
 
       {/* Investment Analysis Section */}
       <CollapsibleSection
