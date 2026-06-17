@@ -76,6 +76,10 @@ export function BrandingSettings() {
           shop_subtitle: shopSubtitle,
           shop_address: shopAddress,
           shop_phone: shopPhone,
+          accent_color: accentColor,
+          accent_color_2: accentColor2,
+          theme_mode: themeMode,
+          contrast_level: contrastLevel,
         })
         .eq("id", settingsId);
 
