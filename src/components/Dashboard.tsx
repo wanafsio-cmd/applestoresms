@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShopSettings } from "@/hooks/useShopSettings";
 import { MobileDashboardWidget } from "./MobileDashboardWidget";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 interface DashboardProps {
   onNavigateToPOS?: () => void;
