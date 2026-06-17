@@ -25,6 +25,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { format, formatDistanceToNow, startOfDay, endOfDay, subDays } from "date-fns";
 import { bn } from "date-fns/locale";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 import { 
   Activity, 
   Shield, 
