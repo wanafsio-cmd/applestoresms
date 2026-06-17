@@ -338,6 +338,7 @@ export function Products() {
             <p className="text-sm md:text-base text-muted-foreground mt-1">Manage your inventory</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <CollapseGroupControls group="products" />
             {/* Download Buttons */}
             <Button
               onClick={downloadExcel}
