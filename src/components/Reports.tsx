@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 export function Reports() {
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -262,11 +263,11 @@ export function Reports() {
         </div>
 
       {/* Investment Analysis Section */}
-      <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-foreground flex items-center">
-          <span className="text-xl md:text-2xl mr-2">💰</span>
-          Total Investment Analysis
-        </h2>
+      <CollapsibleSection
+        title={<><span className="mr-2">💰</span>Total Investment Analysis</>}
+        defaultOpen={true}
+        className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200"
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Card className="p-4 md:p-6 bg-green-50 dark:bg-green-950/20 border-green-200">
             <div className="flex items-center space-x-2 mb-3">
@@ -276,7 +277,7 @@ export function Reports() {
             <p className="text-2xl md:text-3xl font-bold text-green-600">${newProductsInvestment.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-2">{newProducts} products • {newProductsStock} units</p>
           </Card>
-          
+
           <Card className="p-4 md:p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -285,7 +286,7 @@ export function Reports() {
             <p className="text-2xl md:text-3xl font-bold text-blue-600">${usedProductsInvestment.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-2">{usedProducts} products • {usedProductsStock} units</p>
           </Card>
-          
+
           <Card className="p-4 md:p-6 bg-purple-50 dark:bg-purple-950/20 border-purple-200">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-purple-500"></div>
@@ -295,15 +296,15 @@ export function Reports() {
             <p className="text-xs text-muted-foreground mt-2">{newProducts + usedProducts} products • {newProductsStock + usedProductsStock} units</p>
           </Card>
         </div>
-        
+
         {/* Investment Breakdown Percentage */}
         <div className="mt-4 md:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground mb-1">New Products Share</p>
             <div className="flex items-center space-x-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
+                <div
+                  className="bg-green-500 h-2 rounded-full"
                   style={{ width: `${totalInvestment > 0 ? (newProductsInvestment / totalInvestment * 100) : 0}%` }}
                 ></div>
               </div>
@@ -312,13 +313,13 @@ export function Reports() {
               </p>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground mb-1">Used Products Share</p>
             <div className="flex items-center space-x-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full" 
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
                   style={{ width: `${totalInvestment > 0 ? (usedProductsInvestment / totalInvestment * 100) : 0}%` }}
                 ></div>
               </div>
@@ -328,11 +329,10 @@ export function Reports() {
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
       {/* 360 Degree Report - New vs Used Mobiles */}
-      <Card className="p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-foreground">Product Condition Analysis</h2>
+      <CollapsibleSection title="Product Condition Analysis" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* New Products Section */}
           <div className="space-y-3 md:space-y-4">
@@ -386,10 +386,9 @@ export function Reports() {
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
-      <Card className="p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">Top Selling Products</h2>
+      <CollapsibleSection title="Top Selling Products" defaultOpen={true}>
         <div className="space-y-4">
           {topProducts.map((product, index) => (
             <div key={index} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -404,64 +403,63 @@ export function Reports() {
             <p className="text-center text-muted-foreground py-8">No sales data available yet</p>
           )}
         </div>
-        </Card>
+      </CollapsibleSection>
 
-        <div ref={printRef}>
-          <Card className="p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">Recent Sales</h2>
+      <div ref={printRef}>
+        <CollapsibleSection title="Recent Sales" defaultOpen={true}>
           <div className="space-y-4">
             {filteredSales?.slice(0, 10).map((sale) => (
-            <Card key={sale.id} className="p-4 hover:bg-muted/50">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <p className="font-semibold text-foreground">
-                    {sale.customers?.name || "Walk-in Customer"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(sale.created_at).toLocaleString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-primary">
-                    ${Number(sale.total_amount).toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {sale.payment_method}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Items:</p>
-                {sale.sale_items?.map((item: any, index: number) => (
-                  <div key={index} className="flex justify-between items-center text-sm bg-muted/30 p-2 rounded">
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{item.products?.name || "Product"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
-                        {item.condition && <span className="ml-2">• {item.condition}</span>}
-                      </p>
-                    </div>
+              <Card key={sale.id} className="p-4 hover:bg-muted/50">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
                     <p className="font-semibold text-foreground">
-                      ${Number(item.total_price).toFixed(2)}
+                      {sale.customers?.name || "Walk-in Customer"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(sale.created_at).toLocaleString()}
                     </p>
                   </div>
-                ))}
-              </div>
-              {sale.notes && (
-                <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    <span className="font-medium">Note:</span> {sale.notes}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-primary">
+                      ${Number(sale.total_amount).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {sale.payment_method}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </Card>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Items:</p>
+                  {sale.sale_items?.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center text-sm bg-muted/30 p-2 rounded">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{item.products?.name || "Product"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Qty: {item.quantity} × ${Number(item.unit_price).toFixed(2)}
+                          {item.condition && <span className="ml-2">• {item.condition}</span>}
+                        </p>
+                      </div>
+                      <p className="font-semibold text-foreground">
+                        ${Number(item.total_price).toFixed(2)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {sale.notes && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Note:</span> {sale.notes}
+                    </p>
+                  </div>
+                )}
+              </Card>
             ))}
             {(!filteredSales || filteredSales.length === 0) && (
               <p className="text-center text-muted-foreground py-8">No sales data available with current filters</p>
             )}
           </div>
-        </Card>
-        </div>
+        </CollapsibleSection>
+      </div>
       </div>
     </div>
   );

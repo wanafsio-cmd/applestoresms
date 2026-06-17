@@ -19,6 +19,7 @@ import { productSchema } from "@/lib/validation";
 import { validateOrToast } from "@/lib/validateForm";
 import { exportProductsToExcel, exportProductsToPDF } from "@/lib/exports/productsExport";
 import { qk } from "@/lib/queryKeys";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 export function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -680,7 +681,7 @@ export function Products() {
         </div>
 
       {/* Search and Filters */}
-      <Card className="p-4">
+      <CollapsibleSection title="🔍 সার্চ ও ফিল্টার" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2 flex gap-2">
             <Input
@@ -689,8 +690,8 @@ export function Products() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowScanner(true)}
               className="shrink-0"
             >
@@ -720,8 +721,8 @@ export function Products() {
           </Select>
         </div>
         <div className="mt-4 flex items-center space-x-2">
-          <Checkbox 
-            id="showOutOfStock" 
+          <Checkbox
+            id="showOutOfStock"
             checked={showOutOfStock}
             onCheckedChange={(checked) => setShowOutOfStock(checked as boolean)}
           />
@@ -750,7 +751,7 @@ export function Products() {
             </Button>
           </div>
         )}
-      </Card>
+      </CollapsibleSection>
       </div>
 
       {/* Scrollable Content */}

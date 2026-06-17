@@ -17,6 +17,7 @@ import { toUserMessage } from "@/lib/errors";
 import { safeExport } from "@/lib/safeExport";
 import { investmentEntrySchema } from "@/lib/validation";
 import { validateOrToast } from "@/lib/validateForm";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
 export function Investments() {
   const qc = useQueryClient();
@@ -447,7 +448,7 @@ export function Investments() {
       </div>
 
       {/* Filters */}
-      <Card className="p-4">
+      <CollapsibleSection title="🔍 ফিল্টার" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Select value={filterSector} onValueChange={setFilterSector}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -460,7 +461,7 @@ export function Investments() {
           <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} placeholder="শেষ" />
           <Button variant="outline" onClick={() => { setFilterSector("all"); setDateFrom(""); setDateTo(""); }}>রিসেট</Button>
         </div>
-      </Card>
+      </CollapsibleSection>
 
       {/* Entries & Incomes lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
