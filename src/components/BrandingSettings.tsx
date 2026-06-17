@@ -257,6 +257,94 @@ export function BrandingSettings() {
           </div>
         </div>
 
+        {/* Neon Theme Customization */}
+        <div className="p-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Palette className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground tracking-wide">নিয়ন থিম কাস্টমাইজেশন</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">প্রাইমারি নিয়ন রঙ</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                  className="h-10 w-14 rounded-md border border-border bg-transparent cursor-pointer"
+                />
+                <Input value={accentColor} onChange={(e) => setAccentColor(e.target.value)} placeholder="#22e6ff" className="font-mono" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">সেকেন্ডারি নিয়ন রঙ</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={accentColor2}
+                  onChange={(e) => setAccentColor2(e.target.value)}
+                  className="h-10 w-14 rounded-md border border-border bg-transparent cursor-pointer"
+                />
+                <Input value={accentColor2} onChange={(e) => setAccentColor2(e.target.value)} placeholder="#ff3df0" className="font-mono" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">থিম মোড</label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={themeMode === "dark" ? "default" : "outline"}
+                  onClick={() => setThemeMode("dark")}
+                  className="flex-1"
+                >
+                  🌙 ডার্ক
+                </Button>
+                <Button
+                  type="button"
+                  variant={themeMode === "light" ? "default" : "outline"}
+                  onClick={() => setThemeMode("light")}
+                  className="flex-1"
+                >
+                  ☀️ লাইট
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">
+                কনট্রাস্ট লেভেল: <span className="font-mono text-primary">{contrastLevel}%</span>
+              </label>
+              <input
+                type="range"
+                min={70}
+                max={140}
+                step={5}
+                value={contrastLevel}
+                onChange={(e) => setContrastLevel(Number(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground font-mono mt-1">
+                <span>সফট</span>
+                <span>নরমাল</span>
+                <span>হাই</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Live preview swatch */}
+          <div className="flex items-center gap-3 p-3 rounded-lg neon-border">
+            <div className="w-10 h-10 rounded-md" style={{ background: accentColor, boxShadow: `0 0 16px ${accentColor}` }} />
+            <div className="w-10 h-10 rounded-md" style={{ background: accentColor2, boxShadow: `0 0 16px ${accentColor2}` }} />
+            <div className="flex-1">
+              <p className="text-sm font-display font-bold neon-text">{shopName || "MOBILE GALARY"}</p>
+              <p className="text-[10px] text-muted-foreground font-mono">// live preview — সেভ করলে সব পেজে অ্যাপ্লাই হবে</p>
+            </div>
+          </div>
+        </div>
+
+
         <Button onClick={handleSave} disabled={saving || !settingsId} className="w-full md:w-auto bg-accent hover:bg-accent/90 text-white">
           {saving ? "⏳ সংরক্ষণ হচ্ছে..." : "💾 সংরক্ষণ করুন"}
         </Button>
