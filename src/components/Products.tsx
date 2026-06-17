@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,11 @@ import { BarcodeScanner } from "./BarcodeScanner";
 import { ProductQuickView } from "./ProductQuickView";
 import { Eye, ScanBarcode, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { ActivityLogger } from "@/hooks/useActivityLog";
-import * as XLSX from "xlsx";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { productSchema } from "@/lib/validation";
+import { validateOrToast } from "@/lib/validateForm";
+import { exportProductsToExcel, exportProductsToPDF } from "@/lib/exports/productsExport";
+import { qk } from "@/lib/queryKeys";
 export function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -85,56 +89,50 @@ export function Products() {
     },
   });
 
-  const addMutation = useMutation({
+  const addMutation = useSafeMutation({
     mutationFn: async (data: any) => {
       const { data: inserted, error } = await supabase.from("products").insert([data]).select().single();
       if (error) throw error;
       return { ...inserted, name: data.name };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product added successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productAdded(result.name, result.id);
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add product");
-    },
+    successMessage: "প্রোডাক্ট যোগ করা হয়েছে!",
+    errorPrefix: "প্রোডাক্ট যোগ ব্যর্থ",
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useSafeMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const { error } = await supabase.from("products").update(data).eq("id", id);
       if (error) throw error;
       return { id, name: data.name };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product updated successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productUpdated(result.name, result.id);
       setEditingProduct(null);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update product");
-    },
+    successMessage: "প্রোডাক্ট আপডেট হয়েছে!",
+    errorPrefix: "আপডেট ব্যর্থ",
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useSafeMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
       return name;
     },
     onSuccess: (name) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product deleted successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productDeleted(name);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete product");
-    },
+    successMessage: "প্রোডাক্ট মুছে ফেলা হয়েছে",
+    errorPrefix: "ডিলিট ব্যর্থ",
   });
 
   const resetForm = () => {
@@ -185,13 +183,27 @@ export function Products() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate IMEI is exactly 15 digits
-    if (!formData.imei || formData.imei.length !== 15) {
-      toast.error("IMEI অবশ্যই ১৫ ডিজিটের হতে হবে");
-      return;
-    }
+    const price = parseFloat(formData.price) || 0;
+    const cost = parseFloat(formData.cost) || 0;
 
-    // Check for duplicate IMEI (both add and edit)
+    // Zod validation for typed/required fields
+    const parsed = validateOrToast(productSchema, {
+      name: formData.name,
+      sku: formData.sku,
+      brand: formData.brand,
+      model: formData.model,
+      imei: formData.imei,
+      barcode: formData.barcode,
+      price,
+      cost,
+      stock_quantity: editingProduct ? Number(editingProduct.stock_quantity ?? 1) : 1,
+      category_id: formData.category_id || null,
+      supplier_id: formData.supplier_id || null,
+      condition: formData.condition || null,
+    });
+    if (!parsed) return;
+
+    // Duplicate IMEI guard (kept on client for friendly message; DB also enforces)
     if (formData.imei) {
       let query = supabase
         .from("products")
@@ -199,7 +211,6 @@ export function Products() {
         .eq("imei", formData.imei)
         .gt("stock_quantity", 0);
 
-      // When editing, exclude the current product from the check
       if (editingProduct) {
         query = query.neq("id", editingProduct.id);
       }
@@ -212,18 +223,18 @@ export function Products() {
       }
 
       if (existingProducts && existingProducts.length > 0) {
-        toast.error(`এই IMEI (${formData.imei}) দিয়ে "${existingProducts[0].name}" ইতিমধ্যে স্টকে আছে। আগে বিক্রি করুন, তারপর আবার এন্ট্রি করতে পারবেন।`);
+        toast.error(
+          `এই IMEI (${formData.imei}) দিয়ে "${existingProducts[0].name}" ইতিমধ্যে স্টকে আছে। আগে বিক্রি করুন, তারপর আবার এন্ট্রি করতে পারবেন।`
+        );
         return;
       }
     }
 
-    // Profit validation warning
-    const price = parseFloat(formData.price) || 0;
-    const cost = parseFloat(formData.cost) || 0;
     if (cost > 0 && price > cost * 3) {
-      toast.warning(`⚠️ সতর্কতা: বিক্রয় মূল্য (${price}) ক্রয় মূল্যের (${cost}) ৩ গুণের বেশি। দয়া করে যাচাই করুন।`, {
-        duration: 5000,
-      });
+      toast.warning(
+        `⚠️ সতর্কতা: বিক্রয় মূল্য (${price}) ক্রয় মূল্যের (${cost}) ৩ গুণের বেশি। দয়া করে যাচাই করুন।`,
+        { duration: 5000 }
+      );
     }
 
     const submitData = {
@@ -232,9 +243,9 @@ export function Products() {
       barcode: editingProduct ? formData.barcode : generateBarcode(),
       brand: formData.brand || extractBrand(formData.name),
       model: formData.model || extractModel(formData.name),
-      price: price,
-      cost: cost,
-      stock_quantity: 1,
+      price,
+      cost,
+      stock_quantity: editingProduct ? editingProduct.stock_quantity : 1,
       low_stock_threshold: 0,
       category_id: formData.category_id || null,
       supplier_id: formData.supplier_id || null,
