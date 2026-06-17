@@ -656,6 +656,9 @@ export type Database = {
       }
       shop_settings: {
         Row: {
+          accent_color: string
+          accent_color_2: string
+          contrast_level: number
           created_at: string
           favicon_url: string | null
           id: string
@@ -664,9 +667,13 @@ export type Database = {
           shop_name: string
           shop_phone: string | null
           shop_subtitle: string | null
+          theme_mode: string
           updated_at: string
         }
         Insert: {
+          accent_color?: string
+          accent_color_2?: string
+          contrast_level?: number
           created_at?: string
           favicon_url?: string | null
           id?: string
@@ -675,9 +682,13 @@ export type Database = {
           shop_name?: string
           shop_phone?: string | null
           shop_subtitle?: string | null
+          theme_mode?: string
           updated_at?: string
         }
         Update: {
+          accent_color?: string
+          accent_color_2?: string
+          contrast_level?: number
           created_at?: string
           favicon_url?: string | null
           id?: string
@@ -686,6 +697,7 @@ export type Database = {
           shop_name?: string
           shop_phone?: string | null
           shop_subtitle?: string | null
+          theme_mode?: string
           updated_at?: string
         }
         Relationships: []
