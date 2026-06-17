@@ -266,6 +266,7 @@ export function Reports() {
 
       {/* Investment Analysis Section */}
       <CollapsibleSection
+        group="reports"
         title={<><span className="mr-2">💰</span>Total Investment Analysis</>}
         defaultOpen={true}
         className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200"
