@@ -26,19 +26,24 @@ export function BrandingSettings() {
   // Initialize form values and ensure a settings row exists
   useEffect(() => {
     const initSettings = async () => {
+    const initSettings = async () => {
       if (settings && settings.id) {
         setSettingsId(settings.id);
         setShopName(settings.shop_name || "");
         setShopSubtitle(settings.shop_subtitle || "");
         setShopAddress(settings.shop_address || "");
         setShopPhone(settings.shop_phone || "");
+        setAccentColor(settings.accent_color || "#22e6ff");
+        setAccentColor2(settings.accent_color_2 || "#ff3df0");
+        setThemeMode(settings.theme_mode || "dark");
+        setContrastLevel(settings.contrast_level ?? 100);
       } else {
         // No row exists - create one
         const { data, error } = await supabase
           .from("shop_settings")
           .insert({
             shop_name: "MOBILE GALARY",
-            shop_subtitle: "Sales & Stock Management System",
+            shop_subtitle: "Mobile Sales & Stock Management",
           })
           .select()
           .single();
