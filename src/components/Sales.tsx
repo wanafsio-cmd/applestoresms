@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { safeExport } from "@/lib/safeExport";
 import { DueCollection } from "./DueCollection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 
 interface SaleDetail {
   id: string;
@@ -54,6 +55,15 @@ export function Sales() {
   const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ group: string; open: boolean }>;
+      if (ce.detail?.group === "sales") setShowFilters(ce.detail.open);
+    };
+    window.addEventListener("lovable:collapse-group", handler);
+    return () => window.removeEventListener("lovable:collapse-group", handler);
+  }, []);
   const itemsPerPage = 10;
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -234,7 +244,8 @@ export function Sales() {
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Sales History</h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">View and manage all sales transactions</p>
           </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <CollapseGroupControls group="sales" />
           <Button
             onClick={handlePrint}
             variant="outline"

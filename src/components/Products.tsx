@@ -20,6 +20,7 @@ import { validateOrToast } from "@/lib/validateForm";
 import { exportProductsToExcel, exportProductsToPDF } from "@/lib/exports/productsExport";
 import { qk } from "@/lib/queryKeys";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CollapseGroupControls } from "@/components/ui/CollapseGroupControls";
 export function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -337,6 +338,7 @@ export function Products() {
             <p className="text-sm md:text-base text-muted-foreground mt-1">Manage your inventory</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <CollapseGroupControls group="products" />
             {/* Download Buttons */}
             <Button
               onClick={downloadExcel}
