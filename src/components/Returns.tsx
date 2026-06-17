@@ -498,6 +498,7 @@ export function Returns() {
               )}
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Stats Cards */}
