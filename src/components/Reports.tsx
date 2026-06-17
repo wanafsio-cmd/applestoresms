@@ -332,8 +332,7 @@ export function Reports() {
       </CollapsibleSection>
 
       {/* 360 Degree Report - New vs Used Mobiles */}
-      <Card className="p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-foreground">Product Condition Analysis</h2>
+      <CollapsibleSection title="Product Condition Analysis" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* New Products Section */}
           <div className="space-y-3 md:space-y-4">
@@ -387,7 +386,7 @@ export function Reports() {
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
       <Card className="p-4 md:p-6">
         <h2 className="text-lg md:text-xl font-semibold mb-4 text-foreground">Top Selling Products</h2>
