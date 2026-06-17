@@ -263,11 +263,11 @@ export function Reports() {
         </div>
 
       {/* Investment Analysis Section */}
-      <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200">
-        <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-foreground flex items-center">
-          <span className="text-xl md:text-2xl mr-2">💰</span>
-          Total Investment Analysis
-        </h2>
+      <CollapsibleSection
+        title={<><span className="mr-2">💰</span>Total Investment Analysis</>}
+        defaultOpen={true}
+        className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200"
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Card className="p-4 md:p-6 bg-green-50 dark:bg-green-950/20 border-green-200">
             <div className="flex items-center space-x-2 mb-3">
@@ -277,7 +277,7 @@ export function Reports() {
             <p className="text-2xl md:text-3xl font-bold text-green-600">${newProductsInvestment.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-2">{newProducts} products • {newProductsStock} units</p>
           </Card>
-          
+
           <Card className="p-4 md:p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -286,7 +286,7 @@ export function Reports() {
             <p className="text-2xl md:text-3xl font-bold text-blue-600">${usedProductsInvestment.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground mt-2">{usedProducts} products • {usedProductsStock} units</p>
           </Card>
-          
+
           <Card className="p-4 md:p-6 bg-purple-50 dark:bg-purple-950/20 border-purple-200">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-3 h-3 rounded-full bg-purple-500"></div>
@@ -296,15 +296,15 @@ export function Reports() {
             <p className="text-xs text-muted-foreground mt-2">{newProducts + usedProducts} products • {newProductsStock + usedProductsStock} units</p>
           </Card>
         </div>
-        
+
         {/* Investment Breakdown Percentage */}
         <div className="mt-4 md:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground mb-1">New Products Share</p>
             <div className="flex items-center space-x-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-green-500 h-2 rounded-full" 
+                <div
+                  className="bg-green-500 h-2 rounded-full"
                   style={{ width: `${totalInvestment > 0 ? (newProductsInvestment / totalInvestment * 100) : 0}%` }}
                 ></div>
               </div>
@@ -313,13 +313,13 @@ export function Reports() {
               </p>
             </div>
           </div>
-          
+
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
             <p className="text-sm text-muted-foreground mb-1">Used Products Share</p>
             <div className="flex items-center space-x-2">
               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full" 
+                <div
+                  className="bg-blue-500 h-2 rounded-full"
                   style={{ width: `${totalInvestment > 0 ? (usedProductsInvestment / totalInvestment * 100) : 0}%` }}
                 ></div>
               </div>
@@ -329,7 +329,7 @@ export function Reports() {
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
       {/* 360 Degree Report - New vs Used Mobiles */}
       <Card className="p-4 md:p-6">
