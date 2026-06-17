@@ -172,11 +172,12 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
         </Card>
       )}
 
-      <Card className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/60">
-        <h2 className="text-xl font-semibold mb-6 text-foreground flex items-center">
-          <span className="text-2xl mr-2">💰</span>
-          মোট বিনিয়োগ বিশ্লেষণ
-        </h2>
+      <CollapsibleSection
+        group="dashboard"
+        title="💰 মোট বিনিয়োগ বিশ্লেষণ"
+        defaultOpen={true}
+        className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200/60"
+      >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6 bg-green-50 dark:bg-green-950/20 border-green-200">
             <div className="flex items-center space-x-2 mb-3">
@@ -237,10 +238,9 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-6 text-foreground">প্রোডাক্ট অবস্থা বিশ্লেষণ</h2>
+      <CollapsibleSection group="dashboard" title="📦 প্রোডাক্ট অবস্থা বিশ্লেষণ" defaultOpen={true}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="flex items-center space-x-2 mb-4">
@@ -292,10 +292,9 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
             </div>
           </div>
         </div>
-      </Card>
+      </CollapsibleSection>
 
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4 text-foreground">সাম্প্রতিক কার্যক্রম</h2>
+      <CollapsibleSection group="dashboard" title="🕒 সাম্প্রতিক কার্যক্রম" defaultOpen={true}>
         <div className="space-y-4">
           {sales?.slice(0, 5).map((sale) => (
             <div key={sale.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
@@ -317,7 +316,7 @@ export function Dashboard({ onNavigateToPOS, onNavigateToProducts }: DashboardPr
             <p className="text-center text-muted-foreground py-8">এখনো কোনো বিক্রয় নেই। বিক্রয় শুরু করুন!</p>
           )}
         </div>
-      </Card>
+      </CollapsibleSection>
       </div>
     </div>
   );
