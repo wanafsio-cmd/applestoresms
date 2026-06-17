@@ -797,6 +797,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      collect_due: {
+        Args: {
+          p_amount: number
+          p_method?: string
+          p_notes?: string
+          p_sale_id: string
+        }
+        Returns: Json
+      }
+      complete_sale: { Args: { payload: Json }; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
