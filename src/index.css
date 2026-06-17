@@ -97,10 +97,24 @@
 
   body {
     @apply bg-background text-foreground min-h-screen antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: 'cv11', 'ss01';
+    background-image:
+      radial-gradient(circle at 12% 18%, hsl(186 100% 55% / 0.10), transparent 45%),
+      radial-gradient(circle at 88% 82%, hsl(305 100% 60% / 0.10), transparent 45%),
+      linear-gradient(transparent 0, transparent calc(100% - 1px), hsl(186 100% 55% / 0.04) 100%),
+      linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), hsl(186 100% 55% / 0.04) 100%);
+    background-size: auto, auto, 40px 40px, 40px 40px;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Orbitron', 'Space Grotesk', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 
   html {
