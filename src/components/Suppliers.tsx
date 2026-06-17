@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Building2, RotateCcw, Search, Phone, MapPin, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
+import { supplierSchema } from "@/lib/validation";
+import { validateOrToast } from "@/lib/validateForm";
+import { toUserMessage } from "@/lib/errors";
 
 export function Suppliers() {
   const qc = useQueryClient();
@@ -65,11 +68,13 @@ export function Suppliers() {
 
   const saveSupplier = useMutation({
     mutationFn: async () => {
+      const parsed = validateOrToast(supplierSchema, supplierForm);
+      if (!parsed) throw new Error("__validation__");
       if (editingSupplier) {
-        const { error } = await supabase.from("suppliers").update(supplierForm).eq("id", editingSupplier.id);
+        const { error } = await supabase.from("suppliers").update({ ...parsed, notes: supplierForm.notes } as any).eq("id", editingSupplier.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("suppliers").insert([supplierForm]);
+        const { error } = await supabase.from("suppliers").insert([{ ...parsed, notes: supplierForm.notes } as any]);
         if (error) throw error;
       }
     },
@@ -78,7 +83,10 @@ export function Suppliers() {
       toast.success(editingSupplier ? "সাপ্লায়ার আপডেট হয়েছে" : "সাপ্লায়ার যোগ হয়েছে");
       setSupplierDialog(false); setEditingSupplier(null); resetSupplierForm();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => {
+      if ((e as Error)?.message === "__validation__") return;
+      toast.error(toUserMessage(e, "সাপ্লায়ার সংরক্ষণ ব্যর্থ"));
+    },
   });
 
   const deleteSupplier = useMutation({
@@ -87,7 +95,7 @@ export function Suppliers() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["suppliers"] }); toast.success("সাপ্লায়ার মুছে ফেলা হয়েছে"); },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "ডিলিট ব্যর্থ")),
   });
 
   // products available for return: belongs to chosen supplier (via supplier_id OR matching supplier_name) AND stock > 0
@@ -143,7 +151,7 @@ export function Suppliers() {
       toast.success(editingReturn ? "সাপ্লায়ার রিটার্ন আপডেট" : "সাপ্লায়ার রিটার্ন সফল");
       setReturnDialog(false); setEditingReturn(null); resetReturnForm();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "রিটার্ন সংরক্ষণ ব্যর্থ")),
   });
 
   const deleteReturn = useMutation({
@@ -163,7 +171,7 @@ export function Suppliers() {
       qc.invalidateQueries({ queryKey: ["products-all"] });
       toast.success("রিটার্ন মুছে ফেলা হয়েছে এবং স্টক ফিরিয়ে আনা হয়েছে");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "ডিলিট ব্যর্থ")),
   });
 
   const startEditSupplier = (s: any) => {

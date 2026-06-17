@@ -13,6 +13,9 @@ import { TrendingUp, Wallet, PiggyBank, ArrowDownCircle, ArrowUpCircle, Trash2, 
 import { format } from "date-fns";
 import { bn } from "date-fns/locale";
 import * as XLSX from "xlsx";
+import { toUserMessage } from "@/lib/errors";
+import { investmentEntrySchema } from "@/lib/validation";
+import { validateOrToast } from "@/lib/validateForm";
 
 export function Investments() {
   const qc = useQueryClient();
@@ -60,6 +63,7 @@ export function Investments() {
   // Sector CRUD
   const saveSector = useMutation({
     mutationFn: async () => {
+      if (!sectorForm.name.trim()) throw new Error("খাতের নাম দিন");
       if (editingSector) {
         const { error } = await supabase.from("investment_sectors").update(sectorForm).eq("id", editingSector.id);
         if (error) throw error;
@@ -73,7 +77,7 @@ export function Investments() {
       toast.success(editingSector ? "খাত আপডেট হয়েছে" : "খাত যোগ হয়েছে");
       setShowSector(false); setEditingSector(null); setSectorForm({ name: "", description: "" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "খাত সংরক্ষণ ব্যর্থ")),
   });
 
   const deleteSector = useMutation({
@@ -82,16 +86,26 @@ export function Investments() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["investment-sectors"] }); toast.success("খাত মুছে ফেলা হয়েছে"); },
-    onError: (e: any) => toast.error("সংশ্লিষ্ট এন্ট্রি/আয় থাকলে আগে মুছতে হবে"),
+    onError: () => toast.error("সংশ্লিষ্ট এন্ট্রি/আয় থাকলে আগে মুছতে হবে"),
   });
 
   // Entry CRUD
   const saveEntry = useMutation({
     mutationFn: async () => {
+      const amount = Number(entryForm.amount);
+      const parsed = validateOrToast(investmentEntrySchema, {
+        sector_id: entryForm.sector_id,
+        type: entryForm.entry_type === "deposit" ? "deposit" : "withdrawal",
+        amount,
+        notes: entryForm.notes,
+        entry_date: entryForm.entry_date,
+      });
+      if (!parsed) throw new Error("__validation__");
+
       const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         sector_id: entryForm.sector_id,
-        amount: Number(entryForm.amount),
+        amount,
         entry_type: entryForm.entry_type,
         purpose: entryForm.purpose,
         notes: entryForm.notes,
@@ -112,7 +126,10 @@ export function Investments() {
       setShowEntry(false); setEditingEntry(null);
       setEntryForm({ sector_id: "", amount: "", entry_type: "deposit", purpose: "", notes: "", entry_date: new Date().toISOString().split('T')[0] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => {
+      if ((e as Error)?.message === "__validation__") return;
+      toast.error(toUserMessage(e, "এন্ট্রি সংরক্ষণ ব্যর্থ"));
+    },
   });
 
   const deleteEntry = useMutation({
@@ -121,15 +138,20 @@ export function Investments() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["investment-entries"] }); toast.success("মুছে ফেলা হয়েছে"); },
+    onError: (e: unknown) => toast.error(toUserMessage(e, "ডিলিট ব্যর্থ")),
   });
 
   // Income CRUD
   const saveIncome = useMutation({
     mutationFn: async () => {
+      if (!incomeForm.sector_id) throw new Error("খাত নির্বাচন করুন");
+      const amt = Number(incomeForm.amount);
+      if (!Number.isFinite(amt) || amt <= 0) throw new Error("সঠিক পরিমাণ দিন");
+
       const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         sector_id: incomeForm.sector_id,
-        amount: Number(incomeForm.amount),
+        amount: amt,
         source: incomeForm.source,
         purpose: incomeForm.purpose,
         notes: incomeForm.notes,
@@ -150,7 +172,7 @@ export function Investments() {
       setShowIncome(false); setEditingIncome(null);
       setIncomeForm({ sector_id: "", amount: "", source: "", purpose: "", notes: "", income_date: new Date().toISOString().split('T')[0] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(toUserMessage(e, "আয় সংরক্ষণ ব্যর্থ")),
   });
 
   const deleteIncome = useMutation({

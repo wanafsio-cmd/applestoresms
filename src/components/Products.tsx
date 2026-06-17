@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,11 @@ import { BarcodeScanner } from "./BarcodeScanner";
 import { ProductQuickView } from "./ProductQuickView";
 import { Eye, ScanBarcode, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { ActivityLogger } from "@/hooks/useActivityLog";
-import * as XLSX from "xlsx";
+import { useSafeMutation } from "@/hooks/useSafeMutation";
+import { productSchema } from "@/lib/validation";
+import { validateOrToast } from "@/lib/validateForm";
+import { exportProductsToExcel, exportProductsToPDF } from "@/lib/exports/productsExport";
+import { qk } from "@/lib/queryKeys";
 export function Products() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -85,56 +89,50 @@ export function Products() {
     },
   });
 
-  const addMutation = useMutation({
+  const addMutation = useSafeMutation({
     mutationFn: async (data: any) => {
       const { data: inserted, error } = await supabase.from("products").insert([data]).select().single();
       if (error) throw error;
       return { ...inserted, name: data.name };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product added successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productAdded(result.name, result.id);
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to add product");
-    },
+    successMessage: "প্রোডাক্ট যোগ করা হয়েছে!",
+    errorPrefix: "প্রোডাক্ট যোগ ব্যর্থ",
   });
 
-  const updateMutation = useMutation({
+  const updateMutation = useSafeMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       const { error } = await supabase.from("products").update(data).eq("id", id);
       if (error) throw error;
       return { id, name: data.name };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product updated successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productUpdated(result.name, result.id);
       setEditingProduct(null);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update product");
-    },
+    successMessage: "প্রোডাক্ট আপডেট হয়েছে!",
+    errorPrefix: "আপডেট ব্যর্থ",
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useSafeMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
       return name;
     },
     onSuccess: (name) => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product deleted successfully!");
+      queryClient.invalidateQueries({ queryKey: qk.products });
       ActivityLogger.productDeleted(name);
     },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to delete product");
-    },
+    successMessage: "প্রোডাক্ট মুছে ফেলা হয়েছে",
+    errorPrefix: "ডিলিট ব্যর্থ",
   });
 
   const resetForm = () => {
@@ -185,13 +183,27 @@ export function Products() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate IMEI is exactly 15 digits
-    if (!formData.imei || formData.imei.length !== 15) {
-      toast.error("IMEI অবশ্যই ১৫ ডিজিটের হতে হবে");
-      return;
-    }
+    const price = parseFloat(formData.price) || 0;
+    const cost = parseFloat(formData.cost) || 0;
 
-    // Check for duplicate IMEI (both add and edit)
+    // Zod validation for typed/required fields
+    const parsed = validateOrToast(productSchema, {
+      name: formData.name,
+      sku: formData.sku,
+      brand: formData.brand,
+      model: formData.model,
+      imei: formData.imei,
+      barcode: formData.barcode,
+      price,
+      cost,
+      stock_quantity: editingProduct ? Number(editingProduct.stock_quantity ?? 1) : 1,
+      category_id: formData.category_id || null,
+      supplier_id: formData.supplier_id || null,
+      condition: formData.condition || null,
+    });
+    if (!parsed) return;
+
+    // Duplicate IMEI guard (kept on client for friendly message; DB also enforces)
     if (formData.imei) {
       let query = supabase
         .from("products")
@@ -199,7 +211,6 @@ export function Products() {
         .eq("imei", formData.imei)
         .gt("stock_quantity", 0);
 
-      // When editing, exclude the current product from the check
       if (editingProduct) {
         query = query.neq("id", editingProduct.id);
       }
@@ -212,18 +223,18 @@ export function Products() {
       }
 
       if (existingProducts && existingProducts.length > 0) {
-        toast.error(`এই IMEI (${formData.imei}) দিয়ে "${existingProducts[0].name}" ইতিমধ্যে স্টকে আছে। আগে বিক্রি করুন, তারপর আবার এন্ট্রি করতে পারবেন।`);
+        toast.error(
+          `এই IMEI (${formData.imei}) দিয়ে "${existingProducts[0].name}" ইতিমধ্যে স্টকে আছে। আগে বিক্রি করুন, তারপর আবার এন্ট্রি করতে পারবেন।`
+        );
         return;
       }
     }
 
-    // Profit validation warning
-    const price = parseFloat(formData.price) || 0;
-    const cost = parseFloat(formData.cost) || 0;
     if (cost > 0 && price > cost * 3) {
-      toast.warning(`⚠️ সতর্কতা: বিক্রয় মূল্য (${price}) ক্রয় মূল্যের (${cost}) ৩ গুণের বেশি। দয়া করে যাচাই করুন।`, {
-        duration: 5000,
-      });
+      toast.warning(
+        `⚠️ সতর্কতা: বিক্রয় মূল্য (${price}) ক্রয় মূল্যের (${cost}) ৩ গুণের বেশি। দয়া করে যাচাই করুন।`,
+        { duration: 5000 }
+      );
     }
 
     const submitData = {
@@ -232,9 +243,9 @@ export function Products() {
       barcode: editingProduct ? formData.barcode : generateBarcode(),
       brand: formData.brand || extractBrand(formData.name),
       model: formData.model || extractModel(formData.name),
-      price: price,
-      cost: cost,
-      stock_quantity: 1,
+      price,
+      cost,
+      stock_quantity: editingProduct ? editingProduct.stock_quantity : 1,
       low_stock_threshold: 0,
       category_id: formData.category_id || null,
       supplier_id: formData.supplier_id || null,
@@ -312,170 +323,8 @@ export function Products() {
     }
   };
 
-  // Download products as Excel
-  const downloadExcel = () => {
-    if (!products || products.length === 0) {
-      toast.error("কোনো প্রোডাক্ট নেই ডাউনলোড করার জন্য");
-      return;
-    }
-
-    const excelData = products.map((product, index) => ({
-      'ক্রমিক': index + 1,
-      'প্রোডাক্ট নাম': product.name,
-      'ব্র্যান্ড': product.brand || '',
-      'মডেল': product.model || '',
-      'IMEI': product.imei || '',
-      'SKU': product.sku || '',
-      'বারকোড': product.barcode || '',
-      'অবস্থা': product.condition === 'new' ? 'নতুন' : 'ব্যবহৃত',
-      'ক্যাটাগরি': (product as any).categories?.name || '',
-      'ক্রয় মূল্য (৳)': product.cost || 0,
-      'বিক্রয় মূল্য (৳)': product.price || 0,
-      'স্টক': product.stock_quantity || 0,
-      'RAM': product.ram || '',
-      'Storage': product.storage || '',
-      'Battery': product.battery || '',
-      'সাপ্লায়ার নাম': product.supplier_name || '',
-      'সাপ্লায়ার মোবাইল': product.supplier_mobile || '',
-      'সাপ্লায়ার NID': product.supplier_nid || '',
-      'ওয়ারেন্টি স্ট্যাটাস': product.warranty_status === 'active' ? 'সক্রিয়' : product.warranty_status === 'expired' ? 'মেয়াদোত্তীর্ণ' : 'নেই',
-      'ওয়ারেন্টি মেয়াদ': product.warranty_expiry_date || '',
-      'যুক্ত হয়েছে': new Date(product.created_at).toLocaleDateString('bn-BD'),
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
-    
-    // Auto-size columns
-    const colWidths = Object.keys(excelData[0] || {}).map(key => ({ wch: Math.max(key.length + 2, 15) }));
-    worksheet['!cols'] = colWidths;
-
-    const fileName = `Apple_Point_Products_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-    toast.success(`${products.length}টি প্রোডাক্ট Excel এ ডাউনলোড হয়েছে`);
-  };
-
-  // Download products as PDF (using print)
-  const downloadPDF = () => {
-    if (!products || products.length === 0) {
-      toast.error("কোনো প্রোডাক্ট নেই ডাউনলোড করার জন্য");
-      return;
-    }
-
-    const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock_quantity || 0), 0);
-    const totalCost = products.reduce((sum, p) => sum + (p.cost || 0) * (p.stock_quantity || 0), 0);
-    const inStock = products.filter(p => (p.stock_quantity || 0) > 0).length;
-    const outOfStock = products.filter(p => (p.stock_quantity || 0) <= 0).length;
-
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Apple Store - প্রোডাক্ট তালিকা</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; font-size: 11px; }
-          .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-          .header h1 { font-size: 24px; color: #1a1a1a; }
-          .header p { color: #666; margin-top: 5px; }
-          .summary { display: flex; justify-content: space-around; margin-bottom: 20px; background: #f5f5f5; padding: 15px; border-radius: 8px; }
-          .summary-item { text-align: center; }
-          .summary-item .value { font-size: 18px; font-weight: bold; color: #0066cc; }
-          .summary-item .label { font-size: 10px; color: #666; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-          th { background: #0066cc; color: white; font-weight: 600; }
-          tr:nth-child(even) { background: #f9f9f9; }
-          tr:hover { background: #e8f4ff; }
-          .text-right { text-align: right; }
-          .text-center { text-align: center; }
-          .stock-out { background: #ffe6e6 !important; color: #cc0000; }
-          .footer { margin-top: 20px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
-          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>👑 Apple Store</h1>
-          <p>প্রোডাক্ট ইনভেন্টরি তালিকা</p>
-          <p style="font-size: 10px; margin-top: 5px;">তারিখ: ${new Date().toLocaleDateString('bn-BD')}</p>
-        </div>
-        
-        <div class="summary">
-          <div class="summary-item">
-            <div class="value">${products.length}</div>
-            <div class="label">মোট প্রোডাক্ট</div>
-          </div>
-          <div class="summary-item">
-            <div class="value">${inStock}</div>
-            <div class="label">স্টকে আছে</div>
-          </div>
-          <div class="summary-item">
-            <div class="value">${outOfStock}</div>
-            <div class="label">আউট অফ স্টক</div>
-          </div>
-          <div class="summary-item">
-            <div class="value">৳${totalCost.toLocaleString('bn-BD')}</div>
-            <div class="label">মোট বিনিয়োগ</div>
-          </div>
-          <div class="summary-item">
-            <div class="value">৳${totalValue.toLocaleString('bn-BD')}</div>
-            <div class="label">মোট মূল্য</div>
-          </div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th class="text-center">ক্রমিক</th>
-              <th>প্রোডাক্ট নাম</th>
-              <th>IMEI</th>
-              <th>অবস্থা</th>
-              <th class="text-right">ক্রয় (৳)</th>
-              <th class="text-right">বিক্রয় (৳)</th>
-              <th class="text-center">স্টক</th>
-              <th>সাপ্লায়ার</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${products.map((product, index) => `
-              <tr class="${(product.stock_quantity || 0) <= 0 ? 'stock-out' : ''}">
-                <td class="text-center">${index + 1}</td>
-                <td><strong>${product.name}</strong><br/><small>${product.brand || ''} ${product.model || ''}</small></td>
-                <td style="font-family: monospace; font-size: 10px;">${product.imei || '-'}</td>
-                <td>${product.condition === 'new' ? 'নতুন' : 'ব্যবহৃত'}</td>
-                <td class="text-right">${(product.cost || 0).toLocaleString('bn-BD')}</td>
-                <td class="text-right">${(product.price || 0).toLocaleString('bn-BD')}</td>
-                <td class="text-center">${product.stock_quantity || 0}</td>
-                <td>${product.supplier_name || '-'}<br/><small>${product.supplier_mobile || ''}</small></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div class="footer">
-          <p>Apple Store - Sales & Stock Management System</p>
-          <p>Generated on ${new Date().toLocaleString('bn-BD')}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 250);
-      toast.success(`${products.length}টি প্রোডাক্ট PDF এ ডাউনলোড হচ্ছে`);
-    } else {
-      toast.error("পপআপ ব্লক করা আছে। অনুগ্রহ করে পপআপ অনুমতি দিন।");
-    }
-  };
+  const downloadExcel = () => exportProductsToExcel(products);
+  const downloadPDF = () => exportProductsToPDF(products);
 
   return (
     <div className="flex flex-col h-screen animate-fade-in">
