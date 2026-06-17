@@ -342,6 +342,8 @@ export function Returns() {
             </h1>
             <p className="text-sm md:text-base text-muted-foreground mt-1">পণ্য রিটার্ন ট্র্যাক করুন এবং রিফান্ড প্রসেস করুন</p>
           </div>
+          <div className="flex items-center gap-2 flex-wrap">
+          <CollapseGroupControls group="returns" />
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 gap-2">
