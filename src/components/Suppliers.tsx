@@ -71,10 +71,10 @@ export function Suppliers() {
       const parsed = validateOrToast(supplierSchema, supplierForm);
       if (!parsed) throw new Error("__validation__");
       if (editingSupplier) {
-        const { error } = await supabase.from("suppliers").update({ ...parsed, notes: supplierForm.notes }).eq("id", editingSupplier.id);
+        const { error } = await supabase.from("suppliers").update({ ...parsed, notes: supplierForm.notes } as any).eq("id", editingSupplier.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("suppliers").insert([{ ...parsed, notes: supplierForm.notes }]);
+        const { error } = await supabase.from("suppliers").insert([{ ...parsed, notes: supplierForm.notes } as any]);
         if (error) throw error;
       }
     },
