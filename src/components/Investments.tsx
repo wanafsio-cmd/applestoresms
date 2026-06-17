@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { bn } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toUserMessage } from "@/lib/errors";
+import { safeExport } from "@/lib/safeExport";
 import { investmentEntrySchema } from "@/lib/validation";
 import { validateOrToast } from "@/lib/validateForm";
 
